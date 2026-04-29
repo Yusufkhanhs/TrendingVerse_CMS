@@ -1,1249 +1,868 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="kn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TrendVerse CMS Pro</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
-  <style>
-    :root {
-      --bg:         #080c14;
-      --surface:    #0f1623;
-      --surface2:   #161e2e;
-      --border:     #1e2d42;
-      --accent:     #f97316;
-      --accent-dim: rgba(249,115,22,0.12);
-      --blue:       #38bdf8;
-      --green:      #34d399;
-      --red:        #f87171;
-      --yellow:     #fbbf24;
-      --text:       #e2e8f0;
-      --text-mid:   #94a3b8;
-      --text-dim:   #475569;
-      --radius:     10px;
-      --font-ui:    'Plus Jakarta Sans', sans-serif;
-      --font-head:  'Playfair Display', serif;
-      --font-mono:  'JetBrains Mono', monospace;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:var(--font-ui); background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
-
-    /* ── LOGIN ── */
-    .login-screen {
-      min-height:100vh; display:flex; align-items:center; justify-content:center;
-      background: radial-gradient(ellipse 60% 50% at 20% 60%, rgba(249,115,22,0.08) 0%, transparent 70%),
-                  radial-gradient(ellipse 50% 40% at 80% 20%, rgba(56,189,248,0.06) 0%, transparent 70%), var(--bg);
-      position:relative;
-    }
-    .login-screen::before {
-      content:''; position:absolute; inset:0;
-      background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-      background-size:48px 48px;
-    }
-    .login-card {
-      background:var(--surface); border:1px solid var(--border); border-radius:18px;
-      padding:52px 44px; width:420px; position:relative; z-index:1;
-      box-shadow:0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
-    }
-    .login-logo { text-align:center; margin-bottom:36px; }
-    .login-logo .brand { font-family:var(--font-head); font-size:32px; font-weight:900; color:var(--accent); }
-    .login-logo .tagline {
-      display:block; font-size:11px; color:var(--text-dim); letter-spacing:0.14em;
-      text-transform:uppercase; margin-top:6px;
-    }
-    .login-logo .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin:0 6px; vertical-align:middle; }
-
-    /* ── FORMS ── */
-    .form-group { margin-bottom:16px; }
-    label { display:block; font-size:11.5px; font-weight:700; color:var(--text-mid); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:6px; }
-    input, textarea, select {
-      width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius);
-      padding:11px 14px; color:var(--text); font-family:var(--font-ui); font-size:14px; outline:none;
-      transition:border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus, textarea:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
-    input::placeholder, textarea::placeholder { color:var(--text-dim); }
-    textarea { resize:vertical; min-height:120px; line-height:1.7; }
-    select option { background:var(--surface); }
-
-    /* ── BUTTONS ── */
-    .btn {
-      display:inline-flex; align-items:center; gap:7px; padding:10px 20px;
-      border-radius:var(--radius); font-family:var(--font-ui); font-size:13.5px;
-      font-weight:700; cursor:pointer; border:none; transition:all 0.18s; text-decoration:none; white-space:nowrap;
-    }
-    .btn-primary { background:var(--accent); color:#fff; }
-    .btn-primary:hover { background:#ea6c0a; transform:translateY(-1px); box-shadow:0 10px 24px rgba(249,115,22,0.28); }
-    .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-    .btn-secondary:hover { border-color:var(--text-mid); background:var(--border); }
-    .btn-success { background:var(--green); color:#000; }
-    .btn-success:hover { background:#10b981; transform:translateY(-1px); box-shadow:0 10px 24px rgba(52,211,153,0.25); }
-    .btn-ghost { background:transparent; color:var(--text-mid); border:1px solid var(--border); }
-    .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
-    .btn-danger { background:var(--red); color:#fff; }
-    .btn-full { width:100%; justify-content:center; }
-    .btn-sm { padding:6px 14px; font-size:12px; }
-    .btn:disabled { opacity:0.45; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
-
-    /* ── APP SHELL ── */
-    .app { display:flex; min-height:100vh; }
-    .sidebar {
-      width:224px; background:var(--surface); border-right:1px solid var(--border);
-      display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100;
-    }
-    .sidebar-logo { padding:22px 20px; border-bottom:1px solid var(--border); }
-    .sidebar-logo .name { font-family:var(--font-head); font-size:19px; color:var(--accent); }
-    .sidebar-logo .sub { font-size:10px; color:var(--text-dim); letter-spacing:0.12em; text-transform:uppercase; margin-top:3px; }
-    .sidebar-nav { flex:1; padding:10px 0; overflow-y:auto; }
-    .nav-section { padding:12px 18px 4px; font-size:10px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); }
-    .nav-item {
-      display:flex; align-items:center; gap:10px; padding:10px 20px;
-      cursor:pointer; color:var(--text-mid); font-size:13.5px; font-weight:600;
-      transition:all 0.15s; border-left:2px solid transparent;
-    }
-    .nav-item:hover { color:var(--text); background:rgba(255,255,255,0.04); }
-    .nav-item.active { color:var(--accent); background:var(--accent-dim); border-left-color:var(--accent); }
-    .nav-item .ico { font-size:15px; }
-    .sidebar-user {
-      padding:14px 18px; border-top:1px solid var(--border);
-      display:flex; align-items:center; gap:10px;
-    }
-    .user-avatar {
-      width:34px; height:34px; border-radius:50%; background:var(--accent-dim);
-      border:1.5px solid var(--accent); display:flex; align-items:center;
-      justify-content:center; font-size:14px; color:var(--accent); font-weight:800; flex-shrink:0;
-    }
-    .user-name { font-size:13px; font-weight:700; }
-    .user-role { font-size:11px; color:var(--text-dim); }
-    .logout-btn { margin-left:auto; background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:16px; padding:4px; line-height:1; }
-    .logout-btn:hover { color:var(--red); }
-
-    /* ── MAIN AREA ── */
-    .main { margin-left:224px; flex:1; min-height:100vh; }
-    .topbar {
-      background:var(--surface); border-bottom:1px solid var(--border);
-      padding:16px 28px; display:flex; align-items:center; justify-content:space-between;
-      position:sticky; top:0; z-index:50;
-    }
-    .page-title { font-family:var(--font-head); font-size:22px; font-weight:700; }
-    .wp-indicator { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-dim); }
-    .dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
-    .dot.on { background:var(--green); box-shadow:0 0 8px var(--green); }
-    .dot.off { background:var(--red); }
-    .content { padding:28px; max-width:1240px; }
-
-    /* ── CARDS ── */
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; }
-    .card-title { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-mid); margin-bottom:14px; }
-
-    /* ── STAT GRID ── */
-    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
-    .stat-card {
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-      padding:22px; position:relative; overflow:hidden;
-    }
-    .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent); }
-    .stat-card.green::after { background:var(--green); }
-    .stat-card.blue::after { background:var(--blue); }
-    .stat-card.yellow::after { background:var(--yellow); }
-    .stat-label { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:10px; }
-    .stat-value { font-family:var(--font-head); font-size:40px; font-weight:900; line-height:1; }
-    .stat-sub { font-size:11px; color:var(--text-dim); margin-top:6px; }
-
-    /* ── GENERATOR ── */
-    .gen-layout { display:grid; grid-template-columns:380px 1fr; gap:20px; align-items:start; }
-    .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
-    .panel-title { font-family:var(--font-head); font-size:18px; font-weight:700; margin-bottom:20px; }
-
-    .method-tabs { display:flex; background:var(--surface2); border-radius:8px; padding:3px; margin-bottom:16px; }
-    .method-tab { flex:1; padding:8px 4px; text-align:center; border-radius:6px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text-dim); transition:all 0.2s; }
-    .method-tab.active { background:var(--accent); color:#fff; }
-
-    .url-row { display:flex; gap:8px; }
-    .url-row input { flex:1; }
-
-    .fetched-preview {
-      background:var(--surface2); border-radius:8px; padding:12px; font-size:12px;
-      color:var(--text-mid); max-height:140px; overflow-y:auto; line-height:1.7;
-      margin-bottom:12px; border:1px solid var(--border);
-    }
-
-    /* ── OUTPUT ── */
-    .empty-state { text-align:center; padding:60px 20px; color:var(--text-dim); }
-    .empty-state .ico { font-size:44px; margin-bottom:14px; display:block; }
-    .empty-state h3 { font-family:var(--font-head); font-size:18px; color:var(--text-mid); margin-bottom:8px; }
-    .empty-state p { font-size:13px; }
-
-    .gen-loading { text-align:center; padding:60px 20px; }
-    .gen-loading h3 { font-family:var(--font-head); font-size:18px; color:var(--text); margin:16px 0 6px; }
-    .gen-loading p { font-size:13px; color:var(--text-mid); }
-
-    /* Discover score */
-    .discover-box { display:flex; align-items:center; gap:18px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:18px; }
-    .score-ring {
-      width:64px; height:64px; border-radius:50%; border:3px solid var(--green);
-      display:flex; align-items:center; justify-content:center;
-      font-family:var(--font-head); font-size:24px; font-weight:900; color:var(--green); flex-shrink:0;
-    }
-    .score-ring.med { border-color:var(--yellow); color:var(--yellow); }
-    .score-ring.low { border-color:var(--red); color:var(--red); }
-
-    /* Fields */
-    .field { margin-bottom:16px; }
-    .char-count { font-family:var(--font-mono); font-size:11px; color:var(--text-dim); text-align:right; margin-top:4px; }
-    .char-count.warn { color:var(--yellow); }
-    .char-count.over { color:var(--red); }
-
-    /* SEO box */
-    .seo-box { border:1px solid rgba(249,115,22,0.25); border-radius:var(--radius); padding:16px; margin-bottom:16px; background:rgba(249,115,22,0.04); }
-    .seo-box-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); margin-bottom:14px; }
-
-    /* Keywords */
-    .kw-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-    .kw-tag { background:rgba(56,189,248,0.12); color:var(--blue); padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
-
-    /* Preview */
-    .article-preview { background:var(--surface2); border-radius:var(--radius); padding:24px; margin-top:12px; }
-    .preview-hl { font-family:var(--font-head); font-size:22px; font-weight:700; line-height:1.35; margin-bottom:8px; }
-    .preview-sub { color:var(--text-mid); font-size:14px; line-height:1.6; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border); }
-    .preview-body { font-size:14px; line-height:1.85; }
-    .preview-body h2 { font-family:var(--font-head); font-size:17px; margin:18px 0 8px; }
-    .preview-body p { margin-bottom:12px; }
-    .preview-body strong { color:var(--text); }
-
-    /* Action row */
-    .action-row { display:flex; gap:8px; padding-top:16px; border-top:1px solid var(--border); flex-wrap:wrap; }
-
-    /* ── ARTICLES TABLE ── */
-    .table-wrap { border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); }
-    table { width:100%; border-collapse:collapse; }
-    th { text-align:left; padding:11px 16px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); border-bottom:1px solid var(--border); background:var(--surface); }
-    td { padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13.5px; vertical-align:middle; background:var(--surface); }
-    tr:last-child td { border-bottom:none; }
-    tr:hover td { background:rgba(255,255,255,0.025); }
-
-    /* ── BADGES ── */
-    .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; }
-    .b-pub { background:rgba(52,211,153,0.12); color:var(--green); }
-    .b-draft { background:rgba(251,191,36,0.12); color:var(--yellow); }
-    .b-wp-draft { background:rgba(56,189,248,0.12); color:var(--blue); }
-    .b-cat { background:rgba(249,115,22,0.12); color:var(--accent); }
-
-    /* ── SETTINGS GRID ── */
-    .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
-
-    /* ── SEARCH ROW ── */
-    .filter-row { display:flex; gap:12px; margin-bottom:20px; }
-    .filter-row input { flex:1; }
-    .filter-row select { width:160px; }
-
-    /* ── TOAST ── */
-    .toast-wrap { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
-    .toast {
-      background:var(--surface); border:1px solid var(--border); border-radius:10px;
-      padding:12px 16px; font-size:13px; font-weight:600; display:flex; align-items:center;
-      gap:8px; min-width:270px; box-shadow:0 12px 32px rgba(0,0,0,0.5);
-      animation:tin 0.3s ease; pointer-events:all;
-    }
-    .toast.success { border-left:3px solid var(--green); }
-    .toast.error   { border-left:3px solid var(--red); }
-    .toast.info    { border-left:3px solid var(--blue); }
-    @keyframes tin { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
-
-    /* ── LOADER ── */
-    .spin { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.18); border-top-color:currentColor; border-radius:50%; animation:rotate 0.65s linear infinite; }
-    .spin.lg { width:44px; height:44px; border-width:3px; border-color:rgba(249,115,22,0.2); border-top-color:var(--accent); margin:0 auto; display:block; }
-    @keyframes rotate { to { transform:rotate(360deg); } }
-
-    /* ── HELPERS ── */
-    .hidden { display:none !important; }
-    .flex { display:flex; } .gap-2 { gap:8px; } .gap-3 { gap:12px; }
-    .mb-4 { margin-bottom:16px; } .mb-5 { margin-bottom:20px; }
-    .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-    .sec-title { font-family:var(--font-head); font-size:20px; font-weight:700; }
-    .mono { font-family:var(--font-mono); font-size:12px; }
-    hr { border:none; border-top:1px solid var(--border); margin:20px 0; }
-    details > summary { cursor:pointer; font-size:13px; font-weight:700; color:var(--accent); user-select:none; list-style:none; }
-    details > summary::before { content:'▶ '; font-size:10px; }
-    details[open] > summary::before { content:'▼ '; }
-    ::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ಕನ್ನಡ ದುನಿಯಾ CMS — Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<!-- Supabase JS client (free, CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Password hashing via native SubtleCrypto — no CDN needed -->
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f8f8f6;--bg3:#f1f1ee;--bg4:#e9e9e5;
+  --text:#181816;--text2:#5c5c58;--text3:#9c9c96;
+  --bd:rgba(0,0,0,0.09);--bd2:rgba(0,0,0,0.16);
+  --ibg:#e6f1fb;--itx:#185fa5;
+  --sbg:#eaf3de;--stx:#3b6d11;--sbd:rgba(59,109,17,0.2);
+  --dbg:#fcebeb;--dtx:#a32d2d;--dbd:rgba(163,45,45,0.2);
+  --wbg:#faeeda;--wtx:#854f0b;--wbd:rgba(133,79,11,0.2);
+  --pbg:#EEEDFE;--ptx:#534AB7;
+  --r:8px;--rl:12px;--rxl:16px;--sidebar:228px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#232321;--bg3:#2a2a28;--bg4:#333330;
+  --text:#f0f0ec;--text2:#9c9c96;--text3:#5c5c58;
+  --bd:rgba(255,255,255,0.09);--bd2:rgba(255,255,255,0.16);
+  --ibg:#0c2a42;--itx:#85b7eb;--sbg:#172e08;--stx:#97c459;
+  --dbg:#2d1212;--dtx:#f09595;--wbg:#2c1e08;--wtx:#ef9f27;
+  --pbg:#26215C;--ptx:#AFA9EC;
+}}
+body{font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;background:var(--bg3);color:var(--text);min-height:100vh}
+.kn{font-family:'Noto Sans Kannada',sans-serif;line-height:1.95}
+.app-shell{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:0.5px solid var(--bd);display:flex;flex-direction:column;padding:1.25rem 1rem;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100}
+.page{flex:1;margin-left:var(--sidebar);padding:2rem 2.5rem;min-width:0;max-width:960px}
+.login-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg3);padding:2rem}
+.login-card{width:100%;max-width:390px;background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rxl);padding:2.5rem;box-shadow:0 8px 32px rgba(0,0,0,0.07)}
+.nav-sec{font-size:10px;color:var(--text3);padding:0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin:1.25rem 0 5px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);color:var(--text2);cursor:pointer;font-size:13px;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;transition:all .12s}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.on{background:var(--bg3);color:var(--text);font-weight:500}
+.nav-item .ico{width:16px;text-align:center;flex-shrink:0;font-style:normal}
+.card{background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem}
+.card-hd{padding:.875rem 1.25rem;border-bottom:0.5px solid var(--bd);font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--bg2);border-radius:var(--r);padding:.875rem}
+.stat-lbl{font-size:11px;color:var(--text2);margin-bottom:4px}
+.stat-val{font-size:24px;font-weight:600;color:var(--text);line-height:1}
+input,textarea,select{width:100%;padding:8px 10px;background:var(--bg2);border:0.5px solid var(--bd);border-radius:var(--r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--bd2);background:var(--bg)}
+textarea{resize:vertical}
+label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px}
+button{padding:8px 16px;background:var(--bg);border:0.5px solid var(--bd2);border-radius:var(--r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:6px}
+button:hover{background:var(--bg3)}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+button.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+button.primary:hover{opacity:.85;background:var(--text)}
+button.sm{padding:4px 10px;font-size:11px}
+button.danger{color:var(--dtx);border-color:var(--dbd)}
+.alert{padding:.625rem 1rem;border-radius:var(--r);font-size:13px;margin-bottom:.875rem}
+.err{background:var(--dbg);color:var(--dtx);border:0.5px solid var(--dbd)}
+.ok{background:var(--sbg);color:var(--stx);border:0.5px solid var(--sbd)}
+.warn{background:var(--wbg);color:var(--wtx);border:0.5px solid var(--wbd)}
+.bdg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600;white-space:nowrap}
+.bdg-admin{background:var(--wbg);color:var(--wtx)}
+.bdg-writer{background:var(--ibg);color:var(--itx)}
+.bdg-saved{background:var(--sbg);color:var(--stx)}
+.cat-bdg{display:inline-block;padding:1px 7px;border-radius:100px;font-size:10px;background:var(--bg3);color:var(--text2);border:0.5px solid var(--bd)}
+.toggle{display:flex;background:var(--bg2);border-radius:var(--r);padding:3px;gap:3px;width:fit-content}
+.tgl{padding:5px 14px;border:none;border-radius:6px;cursor:pointer;font-size:12px;background:none;color:var(--text2);transition:all .12s}
+.tgl.on{background:var(--bg);color:var(--text);font-weight:500;border:0.5px solid var(--bd)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:8px 12px;font-weight:500;font-size:11px;color:var(--text2);border-bottom:0.5px solid var(--bd);text-transform:uppercase;letter-spacing:.04em}
+.tbl td{padding:11px 12px;border-bottom:0.5px solid var(--bd);color:var(--text);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--bg2)}
+.spin{width:14px;height:14px;border:2px solid var(--bd2);border-top-color:var(--text2);border-radius:50%;animation:sp .65s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pg-hd{margin-bottom:1.5rem}
+.pg-ttl{font-size:18px;font-weight:600;margin-bottom:3px}
+.pg-sub{font-size:12px;color:var(--text2)}
+.logo{width:34px;height:34px;background:var(--text);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--bg);font-size:16px;font-family:'Noto Sans Kannada',sans-serif;font-weight:600;flex-shrink:0}
+.seo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:1rem 0}
+.seo-item{background:var(--bg2);border-radius:var(--r);padding:.875rem}
+.seo-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.seo-val{font-size:12px;color:var(--text);word-break:break-word}
+.art-item{padding:1rem 1.25rem;border-bottom:0.5px solid var(--bd);cursor:pointer;transition:background .1s}
+.art-item:last-child{border-bottom:none}
+.art-item:hover{background:var(--bg2)}
+.art-meta{font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.trend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.trend-card{background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rl);padding:1rem;cursor:pointer;transition:all .15s}
+.trend-card:hover{border-color:var(--bd2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+.trend-ttl{font-size:13px;font-weight:500;color:var(--text);line-height:1.45;margin:8px 0 6px}
+.trend-sum{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.trend-ft{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.trend-gen-btn{padding:4px 10px;font-size:11px;background:var(--text);color:var(--bg);border:none;border-radius:6px;cursor:pointer;opacity:0;transition:opacity .15s}
+.trend-card:hover .trend-gen-btn{opacity:1}
+.filter-chip{padding:5px 12px;border-radius:100px;font-size:12px;border:0.5px solid var(--bd);background:var(--bg);color:var(--text2);cursor:pointer;transition:all .12s}
+.filter-chip:hover{border-color:var(--bd2);color:var(--text)}
+.filter-chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.output-box{background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rl);padding:1.5rem;margin-top:1.25rem}
+.fade{animation:fd .2s ease}
+@keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.ph{font-size:13px;color:var(--text2);text-align:center;padding:3rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+code{font-family:'DM Mono',monospace;background:var(--bg2);padding:1px 5px;border-radius:4px;font-size:12px}
+a{color:var(--itx)}
+.setup-banner{background:var(--wbg);border:0.5px solid var(--wbd);border-radius:var(--rl);padding:1.5rem;margin-bottom:1.25rem}
+@media(max-width:680px){
+  .sidebar{position:static;width:100%;min-height:auto}
+  .page{margin-left:0;padding:1.25rem}
+  .app-shell{flex-direction:column}
+  .seo-grid,.form-row{grid-template-columns:1fr}
+  .trend-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-
-<!-- ===== LOGIN ===== -->
-<div id="loginScreen" class="login-screen">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="brand">TrendVerse</div>
-      <span class="tagline">CMS Pro <span class="dot"></span> trendingverse.online</span>
+<div id="app">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+    <div style="display:flex;align-items:center;gap:10px;color:var(--text2)">
+      <div class="spin"></div>Connecting to database…
     </div>
-    <div class="form-group">
-      <label>Username</label>
-      <input id="loginUser" type="text" placeholder="admin" autocomplete="username">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <div id="loginErr" class="hidden" style="color:var(--red);font-size:13px;margin-bottom:12px;padding:8px 12px;background:rgba(248,113,113,0.08);border-radius:8px;"></div>
-    <button class="btn btn-primary btn-full" onclick="doLogin()">
-      <span id="loginBtnTxt">Sign In →</span>
-    </button>
-    <p style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:18px;">
-      Claude AI · GitHub Pages · Supabase · WordPress REST API
-    </p>
   </div>
 </div>
 
-<!-- ===== APP ===== -->
-<div id="app" class="app hidden">
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="name">TrendVerse</div>
-      <div class="sub">CMS Pro · English</div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-section">Content</div>
-      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="ico">📊</span>Dashboard</div>
-      <div class="nav-item" onclick="showPage('new')" id="nav-new"><span class="ico">✍️</span>New Article</div>
-      <div class="nav-item" onclick="showPage('articles')" id="nav-articles"><span class="ico">📰</span>All Articles</div>
-      <div class="nav-section">System</div>
-      <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="ico">⚙️</span>Settings</div>
-    </nav>
-    <div class="sidebar-user">
-      <div class="user-avatar" id="uAvatar">A</div>
-      <div>
-        <div class="user-name" id="uName">Admin</div>
-        <div class="user-role" id="uRole">admin</div>
-      </div>
-      <button class="logout-btn" onclick="doLogout()" title="Sign out">⏻</button>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="main">
-    <div class="topbar">
-      <div class="page-title" id="pageTitle">Dashboard</div>
-      <div class="wp-indicator">
-        <span class="dot" id="wpDot"></span>
-        <span id="wpTxt">Checking WordPress…</span>
-      </div>
-    </div>
-
-    <div class="content">
-
-      <!-- ===== DASHBOARD ===== -->
-      <div id="page-dashboard">
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-label">Total Articles</div><div class="stat-value" id="sTot">—</div><div class="stat-sub">All time</div></div>
-          <div class="stat-card green"><div class="stat-label">Published</div><div class="stat-value" id="sPub">—</div><div class="stat-sub">Live on WordPress</div></div>
-          <div class="stat-card blue"><div class="stat-label">Drafts</div><div class="stat-value" id="sDraft">—</div><div class="stat-sub">Pending review</div></div>
-          <div class="stat-card yellow"><div class="stat-label">This Month</div><div class="stat-value" id="sMon">—</div><div class="stat-sub">Articles created</div></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Recent Articles</div>
-          <div id="recentList"></div>
-        </div>
-      </div>
-
-      <!-- ===== NEW ARTICLE ===== -->
-      <div id="page-new" class="hidden">
-        <div class="gen-layout">
-
-          <!-- LEFT: INPUT -->
-          <div class="panel">
-            <div class="panel-title">📥 Source Input</div>
-
-            <div class="method-tabs">
-              <div class="method-tab active" onclick="setMethod('url')" id="tab-url">🔗 From URL</div>
-              <div class="method-tab" onclick="setMethod('paste')" id="tab-paste">📋 Paste Text</div>
-            </div>
-
-            <div id="urlArea">
-              <div class="form-group">
-                <label>Trending Article URL</label>
-                <div class="url-row">
-                  <input id="srcUrl" type="url" placeholder="https://example.com/trending-article">
-                  <button class="btn btn-secondary btn-sm" onclick="doFetchUrl()" id="fetchBtn">Fetch</button>
-                </div>
-              </div>
-              <div id="fetchPreview" class="fetched-preview hidden"></div>
-            </div>
-
-            <div id="pasteArea" class="hidden">
-              <div class="form-group">
-                <label>Paste Source Content</label>
-                <textarea id="pasteText" rows="9" placeholder="Paste news article, press release, or raw content here…"></textarea>
-              </div>
-            </div>
-
-            <hr>
-
-            <div class="form-group">
-              <label>Category</label>
-              <select id="artCat">
-                <option value="">Auto-detect</option>
-                <option>Technology</option><option>Business</option><option>Politics</option>
-                <option>Entertainment</option><option>Sports</option><option>Science</option>
-                <option>Health</option><option>World</option><option>Lifestyle</option><option>Trending</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Writing Tone</label>
-              <select id="artTone">
-                <option value="journalistic">📰 Journalistic / Neutral</option>
-                <option value="engaging">💬 Engaging / Conversational</option>
-                <option value="analytical">🔍 Analytical / In-depth</option>
-                <option value="breaking">⚡ Breaking News / Urgent</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Target Word Count</label>
-              <select id="artWords">
-                <option value="600">600 words (Quick read)</option>
-                <option value="750" selected>750 words (Discover-optimized)</option>
-                <option value="900">900 words (In-depth)</option>
-                <option value="1200">1200 words (Long form)</option>
-              </select>
-            </div>
-
-            <button class="btn btn-primary btn-full" onclick="doGenerate()" id="genBtn">✨ Generate Article</button>
-            <p style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;">~₹1–3 per article · Claude AI</p>
-          </div>
-
-          <!-- RIGHT: OUTPUT -->
-          <div class="panel">
-            <div class="panel-title">📝 Generated Article</div>
-
-            <div id="outEmpty" class="empty-state">
-              <span class="ico">🤖</span>
-              <h3>Ready to generate</h3>
-              <p>Provide a URL or paste content, then click Generate Article</p>
-            </div>
-
-            <div id="outLoading" class="gen-loading hidden">
-              <span class="spin lg"></span>
-              <h3>Crafting your article…</h3>
-              <p id="loadMsg">Analyzing source content</p>
-            </div>
-
-            <div id="outContent" class="hidden">
-
-              <!-- Discover Score -->
-              <div class="discover-box">
-                <div class="score-ring" id="scoreRing">—</div>
-                <div>
-                  <div style="font-weight:800;font-size:14px;margin-bottom:4px;">Google Discover Score</div>
-                  <div style="font-size:12px;color:var(--text-mid);" id="scoreTip">—</div>
-                </div>
-              </div>
-
-              <!-- Headline -->
-              <div class="field">
-                <label>Headline <span style="font-weight:400;color:var(--text-dim);">(≤65 chars for Discover)</span></label>
-                <input id="outHl" type="text" maxlength="100" oninput="updateCounters();updatePreview()">
-                <div class="char-count" id="hlCount">0 / 65</div>
-              </div>
-
-              <!-- Subheadline -->
-              <div class="field">
-                <label>Subheadline / Excerpt</label>
-                <textarea id="outSub" rows="2" oninput="updatePreview()"></textarea>
-              </div>
-
-              <!-- SEO -->
-              <div class="seo-box">
-                <div class="seo-box-title">🔍 SEO & Meta</div>
-                <div class="field">
-                  <label>SEO Title <span style="font-weight:400;color:var(--text-dim);">(50–60 chars)</span></label>
-                  <input id="outSeoTit" type="text" maxlength="70" oninput="updateCounters()">
-                  <div class="char-count" id="seoCount">0 / 60</div>
-                </div>
-                <div class="field">
-                  <label>Meta Description <span style="font-weight:400;color:var(--text-dim);">(150–160 chars)</span></label>
-                  <textarea id="outMeta" rows="2" maxlength="165" oninput="updateCounters()"></textarea>
-                  <div class="char-count" id="metaCount">0 / 160</div>
-                </div>
-                <div class="field">
-                  <label>URL Slug</label>
-                  <input id="outSlug" class="mono">
-                </div>
-                <div>
-                  <label>Keywords</label>
-                  <div class="kw-list" id="kwList"></div>
-                </div>
-              </div>
-
-              <!-- Body -->
-              <div class="field">
-                <label>Article Body (HTML) &nbsp;·&nbsp; <span id="wcount">—</span> words</label>
-                <textarea id="outBody" rows="14" style="font-family:var(--font-mono);font-size:12px;line-height:1.6;" oninput="updatePreview()"></textarea>
-              </div>
-
-              <!-- WP options -->
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="mb-4">
-                <div class="field" style="margin:0">
-                  <label>WP Category</label>
-                  <select id="wpCat"><option value="">Uncategorized</option></select>
-                </div>
-                <div class="field" style="margin:0">
-                  <label>Publish Status</label>
-                  <select id="pubStatus">
-                    <option value="draft">Save as WP Draft</option>
-                    <option value="publish">Publish Now</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Preview -->
-              <details class="mb-4">
-                <summary>Preview Rendered Article</summary>
-                <div class="article-preview" id="artPreview"></div>
-              </details>
-
-              <!-- Actions -->
-              <div class="action-row">
-                <button class="btn btn-secondary" onclick="saveDraft()" id="saveDraftBtn">💾 Save Draft</button>
-                <button class="btn btn-success" onclick="pushToWP()" id="pushBtn">🚀 Push to WordPress</button>
-                <button class="btn btn-ghost" onclick="resetGen()">🔄 New</button>
-              </div>
-
-            </div><!-- /outContent -->
-          </div><!-- /output panel -->
-
-        </div>
-      </div><!-- /page-new -->
-
-      <!-- ===== ARTICLES ===== -->
-      <div id="page-articles" class="hidden">
-        <div class="sec-head">
-          <div class="sec-title">All Articles</div>
-          <button class="btn btn-primary btn-sm" onclick="showPage('new')">+ New Article</button>
-        </div>
-        <div class="filter-row">
-          <input type="text" id="searchIn" placeholder="Search headlines…" oninput="filterArts()">
-          <select id="statusFil" onchange="filterArts()">
-            <option value="">All Status</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-            <option value="wp_draft">WP Draft</option>
-          </select>
-          <select id="catFil" onchange="filterArts()">
-            <option value="">All Categories</option>
-            <option>Technology</option><option>Business</option><option>Politics</option>
-            <option>Entertainment</option><option>Sports</option><option>Science</option>
-            <option>Health</option><option>World</option><option>Lifestyle</option><option>Trending</option>
-          </select>
-        </div>
-        <div class="table-wrap" id="artTableWrap">
-          <div class="empty-state" style="background:var(--surface);">
-            <span class="ico">📰</span><h3>No articles yet</h3>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== SETTINGS ===== -->
-      <div id="page-settings" class="hidden">
-        <div class="settings-grid">
-
-          <div class="card">
-            <div class="card-title">🤖 Claude AI Key</div>
-            <div class="form-group">
-              <label>Anthropic API Key</label>
-              <input id="setApiKey" type="password" placeholder="sk-ant-api03-…">
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Save Key</button>
-            <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">Get your key at console.anthropic.com</p>
-          </div>
-
-          <div class="card">
-            <div class="card-title">📡 WordPress Connection</div>
-            <div class="form-group">
-              <label>WordPress Site URL</label>
-              <input id="setWpUrl" type="url" value="https://trendingverse.online">
-            </div>
-            <div class="form-group">
-              <label>WordPress Username</label>
-              <input id="setWpUser" placeholder="your-wp-username">
-            </div>
-            <div class="form-group">
-              <label>Application Password <span style="font-size:10px;color:var(--text-dim);">(not your login password)</span></label>
-              <input id="setWpPass" type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx">
-            </div>
-            <div class="flex gap-2">
-              <button class="btn btn-ghost btn-sm" onclick="testWP()">Test Connection</button>
-              <button class="btn btn-primary btn-sm" onclick="saveWpSettings()">Save</button>
-            </div>
-            <div id="wpTestOut" class="hidden" style="margin-top:12px;font-size:13px;padding:8px 12px;border-radius:8px;background:var(--surface2);"></div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">👤 Change Password</div>
-            <div class="form-group"><label>Current Password</label><input id="curPw" type="password" placeholder="••••••••"></div>
-            <div class="form-group"><label>New Password</label><input id="newPw" type="password" placeholder="••••••••"></div>
-            <div class="form-group"><label>Confirm New</label><input id="cfmPw" type="password" placeholder="••••••••"></div>
-            <button class="btn btn-primary btn-sm" onclick="changePw()">Update Password</button>
-          </div>
-
-          <div class="card">
-            <div class="card-title">📖 How to get Application Password</div>
-            <ol style="font-size:13px;line-height:2.1;color:var(--text-mid);padding-left:18px;">
-              <li>Log in to <strong style="color:var(--text)">WordPress Admin</strong></li>
-              <li>Go to <strong style="color:var(--text)">Users → Your Profile</strong></li>
-              <li>Scroll to <strong style="color:var(--text)">"Application Passwords"</strong></li>
-              <li>Enter a name like <em>TrendVerse CMS</em></li>
-              <li>Click <strong style="color:var(--text)">Add New Application Password</strong></li>
-              <li>Copy the password <span style="color:var(--red)">(shown only once!)</span></li>
-            </ol>
-            <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text-dim);border-left:3px solid var(--accent);">
-              Requires WordPress 5.6+ · Works with Jetpack or native Application Passwords
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-    </div><!-- /content -->
-  </main>
-</div>
-
-<!-- TOAST -->
-<div class="toast-wrap" id="toastWrap"></div>
-
-<!-- ================================================================
-     JAVASCRIPT
-================================================================ -->
 <script>
-// ── CONFIG — Replace with your Supabase project values ──
-const SUPABASE_URL  = 'https://xnsodbqqvjojlzynhvce.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhuc29kYnFxdmpvamx6eW5odmNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDk5MDIsImV4cCI6MjA5MzAyNTkwMn0.I9BVAH2w-gixGu-4l0HG9mmR6cDuFxbyd3Z0s1ptX9I';
+// ══════════════════════════════════════════════════════════════
+//  CONFIG — Edit these two lines with your Supabase credentials
+// ══════════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://xnsodbqqvjojlzynhvce.supabase.co';   // e.g. https://xxxx.supabase.co
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhuc29kYnFxdmpvamx6eW5odmNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDk5MDIsImV4cCI6MjA5MzAyNTkwMn0.I9BVAH2w-gixGu-4l0HG9mmR6cDuFxbyd3Z0s1ptX9I'; // from Project Settings → API
 
-// ── INIT ──
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+// Claude model
+const MODEL = 'claude-sonnet-4-6';
 
-// ── STATE ──
-let user = null, apiKey = '', wpCfg = {url:'https://trendingverse.online', user:'', pass:''};
-let allArts = [], wpCats = [], genData = null, inputMethod = 'url', fetchedText = '';
+// ── SUPABASE CLIENT ───────────────────────────────────────────
+// Declare db at top-level FIRST — before any function that references it
+let db = null;
+function initDB() {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') return null;
+  // Create client and return — boot() assigns to db
+  return supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+}
 
-// ════════════════════════════════════════════════════════
-// AUTH
-// ════════════════════════════════════════════════════════
-async function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const btn = document.getElementById('loginBtnTxt');
-  const err = document.getElementById('loginErr');
-  err.classList.add('hidden');
-  if (!u || !p) { showErr(err, 'Enter username and password'); return; }
-  btn.innerHTML = '<span class="spin"></span> Signing in…';
-
-  try {
-    const { data, error } = await db.from('tv_users').select('*').eq('username', u).single();
-    if (error || !data) throw new Error('User not found');
-
-    let ok = false;
-    if (data.password === p) {                          // plain (first login)
-      ok = true;
-      const h = await bcrypt.hash(p, 10);
-      await db.from('tv_users').update({ password: h }).eq('id', data.id);
-    } else {
-      try { ok = await bcrypt.compare(p, data.password); } catch(_) { ok = false; }
-    }
-    if (!ok) throw new Error('Incorrect password');
-
-    user = data;
-    document.getElementById('uName').textContent   = data.name;
-    document.getElementById('uRole').textContent   = data.role;
-    document.getElementById('uAvatar').textContent = data.name.charAt(0).toUpperCase();
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-
-    await loadSettings();
-    await loadDashboard();
-    checkWpConn();
-  } catch(e) {
-    showErr(err, e.message);
-  } finally {
-    btn.textContent = 'Sign In →';
+// ── DB HELPERS ────────────────────────────────────────────────
+const DB = {
+  async getUsers() {
+    const {data,error} = await db.from('cms_users').select('*').order('created_at');
+    if (error) throw error;
+    return data || [];
+  },
+  async createUser(u) {
+    const {data,error} = await db.from('cms_users').insert(u).select().single();
+    if (error) throw error;
+    return data;
+  },
+  async updateUser(id, patch) {
+    const {error} = await db.from('cms_users').update(patch).eq('id', id);
+    if (error) throw error;
+  },
+  async deleteUser(id) {
+    const {error} = await db.from('cms_users').delete().eq('id', id);
+    if (error) throw error;
+  },
+  async getArticles() {
+    const {data,error} = await db.from('cms_articles').select('*').order('created_at', {ascending:false});
+    if (error) throw error;
+    return data || [];
+  },
+  async saveArticle(a) {
+    const {data,error} = await db.from('cms_articles').insert(a).select().single();
+    if (error) throw error;
+    return data;
+  },
+  async deleteArticle(id) {
+    const {error} = await db.from('cms_articles').delete().eq('id', id);
+    if (error) throw error;
+  },
+  async getApiKey(userId) {
+    const {data} = await db.from('cms_api_keys').select('api_key').eq('user_id', userId).single();
+    return data?.api_key || '';
+  },
+  async saveApiKey(userId, apiKey) {
+    const {error} = await db.from('cms_api_keys').upsert({user_id:userId, api_key:apiKey, updated_at:new Date().toISOString()});
+    if (error) throw error;
   }
+};
+
+// ── SYSTEM PROMPTS ────────────────────────────────────────────
+const SYS_TRENDING = `You are a news intelligence engine. Search the web RIGHT NOW for the top 12 trending news stories across India, United States, and UAE. Return ONLY a valid JSON array — no markdown, no backticks. Each object: {"id":"unique_id_1","region":"India"|"US"|"UAE","category":"Politics"|"Business"|"Technology"|"Sports"|"Entertainment"|"World"|"Science"|"Health","title":"Compelling English headline (max 90 chars)","summary":"2-sentence factual summary (max 200 chars)","sources":["source1","source2"],"keywords":["kw1","kw2","kw3"]}. Return exactly 12 items: 4 India, 4 US, 4 UAE. Real current stories only.`;
+
+const SYS_ARTICLE = `You are a senior journalist at kannadadunia.com. Write a FRESH ORIGINAL Kannada news article (minimum 450 words). NOT a translation. Pure natural Kannada. Return ONLY valid JSON no markdown: {"headline":"","subheadline":"","seoTitle":"","metaDescription":"","slug":"english-slug","keywords":["k1","k2","k3","k4","k5","k6"],"schema":"NewsArticle","discoverScore":8,"discoverTip":"","imageAlt":"","article":"Full Kannada article with \\n\\n between paragraphs","wordCount":480}`;
+
+// ── HELPERS ───────────────────────────────────────────────────
+const todayStr = () => new Date().toISOString().slice(0,10);
+const weekAgo  = () => new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+const fD = d => new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+const fT = d => new Date(d).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+// Password hashing — uses native browser SubtleCrypto (SHA-256 + salt prefix)
+// Format stored: "sha256:SALT:HASH"
+async function hashPw(pw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const saltHex = Array.from(salt).map(b=>b.toString(16).padStart(2,'0')).join('');
+  const enc = new TextEncoder().encode(saltHex + pw);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return `sha256:${saltHex}:${hash}`;
 }
-
-function doLogout() {
-  user = null;
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('loginPass').value = '';
-}
-
-function showErr(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
-document.addEventListener('keydown', e => { if(e.key==='Enter' && !document.getElementById('loginScreen').classList.contains('hidden')) doLogin(); });
-
-// ════════════════════════════════════════════════════════
-// SETTINGS
-// ════════════════════════════════════════════════════════
-async function loadSettings() {
-  try {
-    const { data: k } = await db.from('tv_api_keys').select('api_key').eq('user_id', user.id).single();
-    if (k) { apiKey = k.api_key; document.getElementById('setApiKey').value = apiKey; }
-
-    const { data: w } = await db.from('tv_settings').select('*').eq('user_id', user.id).single();
-    if (w) {
-      wpCfg = { url: w.wp_site_url||'https://trendingverse.online', user: w.wp_username||'', pass: w.wp_app_password||'' };
-      document.getElementById('setWpUrl').value  = wpCfg.url;
-      document.getElementById('setWpUser').value = wpCfg.user;
-      document.getElementById('setWpPass').value = wpCfg.pass;
-    }
-  } catch(_) {}
-}
-
-async function saveApiKey() {
-  const k = document.getElementById('setApiKey').value.trim();
-  if (!k) { toast('Enter an API key', 'error'); return; }
-  await db.from('tv_api_keys').upsert({ user_id: user.id, api_key: k, updated_at: new Date().toISOString() });
-  apiKey = k;
-  toast('API key saved!', 'success');
-}
-
-async function saveWpSettings() {
-  const url  = document.getElementById('setWpUrl').value.trim();
-  const uname = document.getElementById('setWpUser').value.trim();
-  const pass = document.getElementById('setWpPass').value.trim();
-  if (!url || !uname || !pass) { toast('Fill all WordPress fields', 'error'); return; }
-  await db.from('tv_settings').upsert({ user_id: user.id, wp_site_url: url, wp_username: uname, wp_app_password: pass, updated_at: new Date().toISOString() });
-  wpCfg = { url, user: uname, pass };
-  toast('WordPress settings saved!', 'success');
-  checkWpConn();
-}
-
-async function testWP() {
-  const url   = document.getElementById('setWpUrl').value.trim();
-  const uname = document.getElementById('setWpUser').value.trim();
-  const pass  = document.getElementById('setWpPass').value.trim();
-  const out   = document.getElementById('wpTestOut');
-  out.textContent = 'Testing…'; out.classList.remove('hidden');
-  try {
-    const r = await fetch(`${url}/wp-json/wp/v2/users/me`, { headers: { 'Authorization': 'Basic ' + btoa(uname+':'+pass) } });
-    if (r.ok) {
-      const d = await r.json();
-      out.innerHTML = `<span style="color:var(--green)">✅ Connected as <strong>${d.name}</strong> (${(d.roles||[]).join(', ')})</span>`;
-      toast('WordPress connected!', 'success');
-    } else {
-      const e = await r.json();
-      out.innerHTML = `<span style="color:var(--red)">❌ ${e.message||'Auth failed'}</span>`;
-    }
-  } catch(e) {
-    out.innerHTML = `<span style="color:var(--red)">❌ ${e.message} — Enable CORS on your WP site (install WP CORS plugin)</span>`;
+async function checkPw(pw, stored) {
+  // Support legacy plain-text passwords (seed admin uses bcrypt hash — handle gracefully)
+  if (!stored) return false;
+  if (stored.startsWith('sha256:')) {
+    const [, saltHex, storedHash] = stored.split(':');
+    const enc = new TextEncoder().encode(saltHex + pw);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    const hash = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    return hash === storedHash;
   }
+  // Fallback: plain text comparison (only for initial seed admin before first password change)
+  return pw === stored;
 }
 
-async function checkWpConn() {
-  const dot = document.getElementById('wpDot');
-  const txt = document.getElementById('wpTxt');
-  if (!wpCfg.user || !wpCfg.pass) { txt.textContent = 'WP not configured'; return; }
-  try {
-    const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/users/me`, { headers: { 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) } });
-    if (r.ok) {
-      dot.className = 'dot on'; txt.textContent = 'WordPress Connected';
-      loadWpCats();
-    } else {
-      dot.className = 'dot off'; txt.textContent = 'WP Auth Failed';
-    }
-  } catch(_) {
-    dot.className = 'dot off'; txt.textContent = 'WP Unreachable';
-  }
-}
+// ── STATE ─────────────────────────────────────────────────────
+let S = {
+  ready: false, pg: 'boot', user: null,
+  users: [], arts: [], apiKey: '',
+  tab: 'trending', atab: 'dash', itype: 'url',
+  genning: false, genned: null, err: null, ok: null,
+  xid: null, saved: '', lErr: '', settingsMsg: '',
+  trends: [], trendLoading: false, trendErr: null,
+  trendLoaded: false, regionFilter: 'All', catFilter: 'All',
+  trendGenId: null, loading: false
+};
 
-async function loadWpCats() {
-  try {
-    const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/categories?per_page=50`, { headers: { 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) } });
-    if (!r.ok) return;
-    wpCats = await r.json();
-    const sel = document.getElementById('wpCat');
-    sel.innerHTML = '<option value="">Uncategorized</option>';
-    wpCats.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-  } catch(_) {}
-}
-
-async function changePw() {
-  const cur = document.getElementById('curPw').value;
-  const nw  = document.getElementById('newPw').value;
-  const cf  = document.getElementById('cfmPw').value;
-  if (!cur||!nw||!cf) { toast('Fill all fields','error'); return; }
-  if (nw !== cf) { toast('Passwords do not match','error'); return; }
-  if (nw.length < 6) { toast('Min 6 characters','error'); return; }
-  let ok = false;
-  try { ok = await bcrypt.compare(cur, user.password); } catch(_) { ok = cur === user.password; }
-  if (!ok) { toast('Current password incorrect','error'); return; }
-  const h = await bcrypt.hash(nw, 10);
-  await db.from('tv_users').update({ password: h }).eq('id', user.id);
-  user.password = h;
-  toast('Password updated!','success');
-  ['curPw','newPw','cfmPw'].forEach(id => document.getElementById(id).value='');
-}
-
-// ════════════════════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════════════════════
-function showPage(p) {
-  ['dashboard','new','articles','settings'].forEach(x => {
-    document.getElementById(`page-${x}`)?.classList.toggle('hidden', x !== p);
-    document.getElementById(`nav-${x}`)?.classList.toggle('active', x === p);
-  });
-  const titles = { dashboard:'Dashboard', new:'New Article', articles:'All Articles', settings:'Settings' };
-  document.getElementById('pageTitle').textContent = titles[p] || p;
-  if (p==='articles') loadArtsList();
-  if (p==='dashboard') loadDashboard();
-}
-
-// ════════════════════════════════════════════════════════
-// DASHBOARD
-// ════════════════════════════════════════════════════════
-async function loadDashboard() {
-  const { data } = await db.from('tv_articles').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
-  allArts = data || [];
-  const now = new Date();
-  const mon = allArts.filter(a => { const d=new Date(a.created_at); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); });
-  document.getElementById('sTot').textContent   = allArts.length;
-  document.getElementById('sPub').textContent   = allArts.filter(a=>a.wp_status==='published').length;
-  document.getElementById('sDraft').textContent = allArts.filter(a=>a.wp_status!=='published').length;
-  document.getElementById('sMon').textContent   = mon.length;
-  const el = document.getElementById('recentList');
-  if (!allArts.length) {
-    el.innerHTML = `<div class="empty-state"><span class="ico">✍️</span><h3>No articles yet</h3><p>Click "New Article" to generate your first piece</p></div>`;
-  } else {
-    el.innerHTML = buildTable(allArts.slice(0, 8));
-  }
-}
-
-// ════════════════════════════════════════════════════════
-// ARTICLES LIST
-// ════════════════════════════════════════════════════════
-async function loadArtsList() {
-  const { data } = await db.from('tv_articles').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
-  allArts = data || [];
-  renderTable(allArts);
-}
-
-function filterArts() {
-  const s = document.getElementById('searchIn').value.toLowerCase();
-  const st = document.getElementById('statusFil').value;
-  const ct = document.getElementById('catFil').value;
-  renderTable(allArts.filter(a => {
-    const ms = !s || (a.headline||'').toLowerCase().includes(s);
-    const mst = !st || a.wp_status === st;
-    const mc = !ct || a.category === ct;
-    return ms && mst && mc;
-  }));
-}
-
-function renderTable(arts) {
-  const el = document.getElementById('artTableWrap');
-  if (!arts.length) {
-    el.innerHTML = `<div class="empty-state" style="background:var(--surface)"><span class="ico">🔍</span><h3>No articles found</h3></div>`;
-    return;
-  }
-  el.innerHTML = buildTable(arts);
-}
-
-function buildTable(arts) {
-  const rows = arts.map(a => {
-    const dt = new Date(a.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-    const stBadge = a.wp_status==='published' ? `<span class="badge b-pub">● Live</span>`
-                  : a.wp_status==='wp_draft'  ? `<span class="badge b-wp-draft">○ WP Draft</span>`
-                  : `<span class="badge b-draft">○ Draft</span>`;
-    const wpLink = a.wp_post_id ? `<a href="${wpCfg.url}/?p=${a.wp_post_id}" target="_blank" style="color:var(--blue);font-size:12px;font-weight:600;">View ↗</a>` : '—';
-    const score  = a.discover_score ? `<span style="font-weight:700;color:${a.discover_score>=80?'var(--green)':a.discover_score>=60?'var(--yellow)':'var(--red)'};">${a.discover_score}</span>` : '—';
-    return `<tr>
-      <td style="max-width:300px">
-        <div style="font-weight:700;font-size:13.5px;line-height:1.4;">${a.headline||'—'}</div>
-        <div class="mono" style="color:var(--text-dim);margin-top:3px;">${a.slug||''}</div>
-      </td>
-      <td>${a.category ? `<span class="badge b-cat">${a.category}</span>` : '—'}</td>
-      <td>${stBadge}</td>
-      <td style="font-size:12px;color:var(--text-mid)">${a.word_count||'—'}</td>
-      <td style="text-align:center">${score}</td>
-      <td style="font-size:12px;color:var(--text-mid)">${dt}</td>
-      <td>${wpLink}</td>
-    </tr>`;
-  }).join('');
-  return `<table>
-    <thead><tr><th>Headline / Slug</th><th>Category</th><th>Status</th><th>Words</th><th>Score</th><th>Date</th><th>WP</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
-}
-
-// ════════════════════════════════════════════════════════
-// INPUT METHOD
-// ════════════════════════════════════════════════════════
-function setMethod(m) {
-  inputMethod = m;
-  document.getElementById('tab-url').classList.toggle('active', m==='url');
-  document.getElementById('tab-paste').classList.toggle('active', m==='paste');
-  document.getElementById('urlArea').classList.toggle('hidden', m!=='url');
-  document.getElementById('pasteArea').classList.toggle('hidden', m!=='paste');
-}
-
-// ════════════════════════════════════════════════════════
-// URL FETCH
-// ════════════════════════════════════════════════════════
-async function doFetchUrl() {
-  const url = document.getElementById('srcUrl').value.trim();
-  if (!url) { toast('Enter a URL', 'error'); return; }
-  const btn = document.getElementById('fetchBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
-  fetchedText = '';
-
-  const proxies = [
-    () => fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`).then(r=>r.json()).then(d=>d.contents),
-    () => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`).then(r=>r.text()),
-    () => fetch(`https://thingproxy.freeboard.io/fetch/${url}`).then(r=>r.text())
-  ];
-
-  let html = '';
-  for (const tryProxy of proxies) {
-    try { html = await tryProxy(); if (html && html.length > 200) break; } catch(_) { continue; }
-  }
-
-  if (!html) {
-    toast('Could not fetch URL. Try pasting content directly.', 'error');
-    btn.disabled = false; btn.textContent = 'Fetch';
-    return;
-  }
-
-  fetchedText = extractText(html);
-  const prev = document.getElementById('fetchPreview');
-  prev.textContent = fetchedText.substring(0, 500) + (fetchedText.length > 500 ? '…' : '');
-  prev.classList.remove('hidden');
-  const wc = fetchedText.trim().split(/\s+/).length;
-  toast(`✅ Fetched! ~${wc} words extracted`, 'success');
-  btn.disabled = false; btn.textContent = 'Re-fetch';
-}
-
-function extractText(html) {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  ['script','style','nav','footer','header','aside','iframe','noscript','form','.ad','[class*="sidebar"]','[class*="related"]','[class*="comment"]','[class*="social"]'].forEach(s => {
-    try { doc.querySelectorAll(s).forEach(e => e.remove()); } catch(_) {}
-  });
-  const main = doc.querySelector('article,[class*="article"],[class*="story"],[class*="post-content"],[class*="entry-content"],main') || doc.body;
-  return (main.innerText || main.textContent || '').split('\n').map(l=>l.trim()).filter(l=>l.length>25).join('\n').substring(0, 9000);
-}
-
-// ════════════════════════════════════════════════════════
-// ARTICLE GENERATION
-// ════════════════════════════════════════════════════════
-async function doGenerate() {
-  if (!apiKey) { toast('Set your Claude API key in Settings first', 'error'); showPage('settings'); return; }
-
-  let src = '';
-  if (inputMethod === 'url') {
-    if (!fetchedText) {
-      if (!document.getElementById('srcUrl').value.trim()) { toast('Enter a URL and click Fetch', 'error'); return; }
-      await doFetchUrl();
-      if (!fetchedText) return;
-    }
-    src = fetchedText;
-  } else {
-    src = document.getElementById('pasteText').value.trim();
-    if (!src) { toast('Paste some content first', 'error'); return; }
-  }
-
-  const cat   = document.getElementById('artCat').value;
-  const tone  = document.getElementById('artTone').value;
-  const words = document.getElementById('artWords').value;
-
-  // Show loading
-  document.getElementById('outEmpty').classList.add('hidden');
-  document.getElementById('outContent').classList.add('hidden');
-  document.getElementById('outLoading').classList.remove('hidden');
-
-  const msgs = ['Analyzing source content…','Crafting original narrative…','Optimizing SEO elements…','Scoring Google Discover readiness…'];
-  let mi = 0;
-  const msgEl = document.getElementById('loadMsg');
-  const iv = setInterval(() => { msgEl.textContent = msgs[++mi % msgs.length]; }, 2500);
-
-  try {
-    const prompt = buildPrompt(src, cat, tone, words);
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+// ── CLAUDE API ────────────────────────────────────────────────
+async function apiCall(system, userMsg, useSearch = false) {
+  if (!S.apiKey || !S.apiKey.startsWith('sk-ant-'))
+    throw new Error('Add your Anthropic API key in Settings first.');
+  const body = {model:MODEL, max_tokens:8000, system, messages:[{role:'user',content:userMsg}]};
+  if (useSearch) body.tools = [{type:'web_search_20250305',name:'web_search'}];
+  let msgs = [{role:'user',content:userMsg}];
+  for (let i = 0; i < 15; i++) {
+    const rb = {...body, messages:msgs};
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        'x-api-key': S.apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({
-        model: 'claude-opus-4-5',   // Switch to claude-sonnet-4-5 to reduce cost
-        max_tokens: 5000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify(rb)
     });
-
-    if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || 'API error'); }
-
-    const raw = (await resp.json()).content[0].text;
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('Could not parse AI response — try again');
-
-    genData = JSON.parse(match[0]);
-    genData.source_url = document.getElementById('srcUrl').value.trim();
-    renderOutput(genData);
-
-  } catch(e) {
-    document.getElementById('outLoading').classList.add('hidden');
-    document.getElementById('outEmpty').classList.remove('hidden');
-    toast('Generation failed: ' + e.message, 'error');
-    console.error(e);
-  } finally {
-    clearInterval(iv);
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error?.message || `API Error ${res.status}`);
+    const txt = (d.content||[]).filter(b => b.type==='text');
+    const tu  = (d.content||[]).filter(b => b.type==='tool_use');
+    if (tu.length) {
+      msgs.push({role:'assistant',content:d.content});
+      msgs.push({role:'user',content:tu.map(tb=>({type:'tool_result',tool_use_id:tb.id,content:[]}))});
+      continue;
+    }
+    if (d.stop_reason==='end_turn' || txt.length) {
+      const t = txt.map(b=>b.text).join('');
+      const c = t.replace(/```json\n?|```/g,'').trim();
+      const m = c.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+      try { return JSON.parse(m ? m[0] : c); }
+      catch { throw new Error('Parse error — please try again.'); }
+    }
+    break;
   }
+  throw new Error('Generation failed — please try again.');
 }
 
-function buildPrompt(src, cat, tone, words) {
-  const tones = {
-    journalistic: 'Professional, neutral, objective. Use inverted pyramid structure. Quote hypothetical experts.',
-    engaging:     'Engaging, conversational. Use storytelling. Start with an anecdote or surprising fact.',
-    analytical:   'Analytical, in-depth. Provide context, implications, trends. Reference industry impact.',
-    breaking:     'Urgent, fast-paced breaking news. Most critical fact first. Short punchy sentences.'
-  };
-  return `You are a senior English journalist writing for trendingverse.online — a trending and viral news site.
+// ── RENDER UTILS ──────────────────────────────────────────────
+const regionDot = r => ({India:'#e74c3c',US:'#2c7be5',UAE:'#27ae60'}[r]||'var(--ptx)');
+const regionBg  = r => ({India:'#fff3f3',US:'#f0f4ff',UAE:'#f0fff4'}[r]||'var(--pbg)');
+const regionTx  = r => ({India:'#c0392b',US:'#2c4fa3',UAE:'#1a7a3c'}[r]||'var(--ptx)');
+const regionBdg = r => `<span class="bdg" style="background:${regionBg(r)};color:${regionTx(r)}"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${regionDot(r)};margin-right:4px"></span>${esc(r)}</span>`;
+const seoF = (lbl,val,kn=false) => `<div class="seo-item"><div class="seo-lbl">${lbl}</div><div class="seo-val${kn?' kn':''}" ${kn?'':'style="font-family:\'DM Mono\',monospace;font-size:11px"'}>${esc(val)}</div></div>`;
+const scoreBar = n => {
+  const pct = Math.round((n/10)*100);
+  const col = n>=8?'var(--stx)':n>=6?'var(--wtx)':'var(--dtx)';
+  return `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:5px;background:var(--bg3);border-radius:100px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:100px"></div></div><span style="font-size:12px;font-weight:600;color:${col};min-width:24px">${n}/10</span></div>`;
+};
 
-TASK: Rewrite the source content below into a COMPLETELY ORIGINAL, plagiarism-free, high-quality English article.
-
-STYLE: ${tones[tone]||tones.journalistic}
-TARGET LENGTH: ${words} words
-${cat ? `CATEGORY: ${cat}` : 'AUTO-DETECT CATEGORY'}
-
-REQUIREMENTS:
-1. Headline: Max 65 characters. Curiosity-driven but NOT clickbait. Factual, compelling.
-2. Subheadline: 1-2 sentences, 100-150 chars. Expand on the headline with key detail.
-3. Article body: Exactly ${words} words. Structure with clear <h2> subheadings every 150-200 words.
-4. First paragraph: Most important fact, written to hook instantly. No fluff.
-5. Naturally weave the primary keyword in within the first 100 words, then 3-5x throughout.
-6. DO NOT reproduce any original phrasing verbatim. Fully rewrite.
-7. Include specific numbers, facts, dates from the source accurately.
-8. End with a strong closing paragraph (outlook, implication, or call-to-thought).
-9. SEO title: 50-60 chars, keyword-rich.
-10. Meta description: 150-160 chars, compelling, includes keyword, drives clicks.
-11. Slug: lowercase, hyphenated, max 60 chars, keyword-first.
-12. Keywords: 5 most relevant SEO keywords for this topic.
-13. Google Discover score (0-100): High image potential+trending topic+engaging headline = high score.
-
-RESPOND WITH ONLY A VALID JSON OBJECT (no markdown fences, no preamble):
-{
-  "headline": "string",
-  "subheadline": "string",
-  "article_html": "string with <p>, <h2>, <strong>, <em> tags",
-  "seo_title": "string",
-  "meta_description": "string",
-  "slug": "string",
-  "keywords": ["k1","k2","k3","k4","k5"],
-  "discover_score": 85,
-  "discover_tip": "one specific tip to improve Discover performance",
-  "word_count": ${words},
-  "category": "string",
-  "schema_type": "NewsArticle"
+// ── SETUP SCREEN ──────────────────────────────────────────────
+function renderSetup() {
+  return `<div class="login-shell"><div class="login-card" style="max-width:480px">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div class="logo" style="width:52px;height:52px;font-size:22px;margin:0 auto 12px">ಕ</div>
+      <div class="kn" style="font-size:17px;font-weight:600">ಕನ್ನಡ ದುನಿಯಾ CMS Pro</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:3px">DATABASE SETUP REQUIRED</div>
+    </div>
+    <div class="alert warn" style="font-size:12px;line-height:1.8">
+      <strong>⚠ Supabase not configured</strong><br>
+      Open <code>index.html</code> and set <code>SUPABASE_URL</code> and <code>SUPABASE_ANON</code> at the top of the script, then refresh.
+    </div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.9">
+      <strong>Quick Setup:</strong><br>
+      1. Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → New Project (free)<br>
+      2. SQL Editor → paste contents of <code>sql/schema.sql</code> → Run<br>
+      3. Project Settings → API → copy URL + anon key<br>
+      4. Paste into <code>index.html</code> top of script<br>
+      5. Push to GitHub → enable GitHub Pages<br><br>
+      See <code>README.md</code> for full instructions.
+    </div>
+  </div></div>`;
 }
 
-SOURCE CONTENT:
----
-${src.substring(0, 7000)}
----`;
+// ── LOGIN ─────────────────────────────────────────────────────
+function renderLogin() {
+  return `<div class="login-shell"><div class="login-card">
+    <div style="text-align:center;margin-bottom:2rem">
+      <div class="logo" style="width:52px;height:52px;font-size:22px;margin:0 auto 12px">ಕ</div>
+      <div class="kn" style="font-size:17px;font-weight:600">ಕನ್ನಡ ದುನಿಯಾ</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:3px;font-weight:500;letter-spacing:.04em">CONTENT MANAGEMENT SYSTEM PRO</div>
+    </div>
+    ${S.lErr ? `<div class="alert err">${esc(S.lErr)}</div>` : ''}
+    <div style="margin-bottom:10px"><label>Username</label><input id="lu" type="text" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div style="margin-bottom:1.5rem"><label>Password</label><input id="lp" type="password" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="primary" onclick="doLogin()" style="width:100%;justify-content:center;padding:10px;font-size:14px" id="loginBtn">Sign in</button>
+    <div style="font-size:11px;color:var(--text2);text-align:center;margin-top:1.25rem;padding-top:1rem;border-top:0.5px solid var(--bd)">Default: <code>admin</code> / <code>admin@123</code></div>
+  </div></div>`;
 }
 
-function renderOutput(d) {
-  document.getElementById('outLoading').classList.add('hidden');
-  document.getElementById('outContent').classList.remove('hidden');
-
-  document.getElementById('outHl').value     = d.headline || '';
-  document.getElementById('outSub').value    = d.subheadline || '';
-  document.getElementById('outSeoTit').value = d.seo_title || '';
-  document.getElementById('outMeta').value   = d.meta_description || '';
-  document.getElementById('outSlug').value   = d.slug || '';
-  document.getElementById('outBody').value   = d.article_html || '';
-  document.getElementById('wcount').textContent = d.word_count || '—';
-
-  // Keywords
-  document.getElementById('kwList').innerHTML = (d.keywords||[]).map(k=>`<span class="kw-tag">${k}</span>`).join('');
-
-  // Discover score
-  const sc = d.discover_score || 0;
-  const ring = document.getElementById('scoreRing');
-  ring.textContent = sc;
-  ring.className = 'score-ring' + (sc < 60 ? ' low' : sc < 80 ? ' med' : '');
-  document.getElementById('scoreTip').textContent = d.discover_tip || '';
-
-  // Auto-select WP category
-  if (d.category && wpCats.length) {
-    const match = wpCats.find(c => c.name.toLowerCase() === d.category.toLowerCase());
-    if (match) document.getElementById('wpCat').value = match.id;
-  }
-
-  updateCounters();
-  updatePreview();
-  toast('Article generated!', 'success');
+// ── SIDEBAR ───────────────────────────────────────────────────
+function renderSidebar() {
+  const isAdmin = S.user?.role === 'admin';
+  const wrNav = !isAdmin ? `
+    <div class="nav-sec">Content</div>
+    <button class="nav-item${S.tab==='trending'?' on':''}" onclick="setTab('trending')"><i class="ico">🔥</i>Trending Topics</button>
+    <button class="nav-item${S.tab==='gen'?' on':''}" onclick="setTab('gen')"><i class="ico">✦</i>Generate Article</button>
+    <button class="nav-item${S.tab==='mine'?' on':''}" onclick="setTab('mine')"><i class="ico">📄</i>My Articles</button>
+    <button class="nav-item${S.tab==='settings'?' on':''}" onclick="setTab('settings')"><i class="ico">⚙</i>Settings</button>`
+  : `
+    <div class="nav-sec">Admin</div>
+    <button class="nav-item${S.atab==='dash'?' on':''}" onclick="setATab('dash')"><i class="ico">◉</i>Dashboard</button>
+    <button class="nav-item${S.atab==='users'?' on':''}" onclick="setATab('users')"><i class="ico">👥</i>Users</button>
+    <button class="nav-item${S.atab==='arts'?' on':''}" onclick="setATab('arts')"><i class="ico">📋</i>All Articles</button>
+    <div class="nav-sec">Content</div>
+    <button class="nav-item${S.atab==='trending'?' on':''}" onclick="setATab('trending')"><i class="ico">🔥</i>Trending Topics</button>
+    <button class="nav-item${S.atab==='gen'?' on':''}" onclick="setATab('gen')"><i class="ico">✦</i>Generate Article</button>
+    <button class="nav-item${S.atab==='settings'?' on':''}" onclick="setATab('settings')"><i class="ico">⚙</i>Settings</button>`;
+  return `<div class="sidebar">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.75rem">
+      <div class="logo">ಕ</div>
+      <div><div style="font-size:13px;font-weight:600;font-family:'Noto Sans Kannada',sans-serif">ಕನ್ನಡ ದುನಿಯಾ</div><div style="font-size:10px;color:var(--text3);font-weight:500">CMS PRO</div></div>
+    </div>
+    ${wrNav}
+    <div style="flex:1"></div>
+    <div style="border-top:0.5px solid var(--bd);padding-top:.875rem;margin-top:1rem">
+      <div style="font-size:12px;font-weight:500">${esc(S.user?.name)}</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:6px">${S.user?.role==='admin'?'Administrator':'Writer'} · @${esc(S.user?.username)}</div>
+      <button onclick="doLogout()" style="font-size:11px;color:var(--text2);background:none;border:none;padding:0;cursor:pointer">Sign out →</button>
+    </div>
+  </div>`;
 }
 
-function updateCounters() {
-  function set(id, val, max) {
-    const el = document.getElementById(id);
-    el.textContent = `${val} / ${max}`;
-    el.className = 'char-count' + (val > max+5 ? ' over' : val > max ? ' warn' : '');
-  }
-  set('hlCount',   document.getElementById('outHl').value.length, 65);
-  set('seoCount',  document.getElementById('outSeoTit').value.length, 60);
-  set('metaCount', document.getElementById('outMeta').value.length, 160);
+// ── TRENDING ──────────────────────────────────────────────────
+function renderTrending() {
+  const REGIONS = ['All','India','US','UAE'];
+  const CATS = ['All','Politics','Business','Technology','Sports','Entertainment','World','Science','Health'];
+  const filtered = S.trends.filter(t =>
+    (S.regionFilter==='All'||t.region===S.regionFilter) &&
+    (S.catFilter==='All'||t.category===S.catFilter)
+  );
+  return `<div class="fade">
+    <div class="pg-hd">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><div class="pg-ttl">🔥 Trending Topics</div><div class="pg-sub">Live trending news from India, US &amp; UAE</div></div>
+        <button onclick="loadTrending(true)" ${S.trendLoading?'disabled':''}>
+          ${S.trendLoading?`<span class="spin"></span> Fetching…`:'↻ Refresh Trends'}
+        </button>
+      </div>
+    </div>
+    ${S.trendErr?`<div class="alert err">${esc(S.trendErr)}</div>`:''}
+    ${!S.trendLoaded&&!S.trendLoading?`
+    <div class="card" style="text-align:center;padding:3rem">
+      <div style="font-size:32px;margin-bottom:12px">🌐</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:6px">Fetch Today's Trending Topics</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:1.5rem">Real-time stories from India, US and UAE via AI web search</div>
+      <button class="primary" onclick="loadTrending(true)" style="padding:10px 24px">🔥 Fetch Trending Topics Now</button>
+    </div>` : `
+    ${S.trendLoading?`<div class="card" style="padding:2rem"><div style="display:flex;align-items:center;gap:12px"><div class="spin"></div><div><div style="font-size:13px;font-weight:500">Searching trending news…</div><div style="font-size:11px;color:var(--text2)">Scanning India, US and UAE sources</div></div></div></div>`
+    :S.trends.length?`
+    <div style="margin-bottom:1.25rem">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--text2);font-weight:500">Region:</span>
+        ${REGIONS.map(r=>`<button class="filter-chip${S.regionFilter===r?' on':''}" onclick="setFilter('region','${r}')">${r}</button>`).join('')}
+        <div style="width:0.5px;height:20px;background:var(--bd)"></div>
+        <span style="font-size:11px;color:var(--text2);font-weight:500">Category:</span>
+        ${CATS.map(c=>`<button class="filter-chip${S.catFilter===c?' on':''}" onclick="setFilter('cat','${c}')">${c}</button>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text2)">
+        India: ${S.trends.filter(t=>t.region==='India').length} ·
+        US: ${S.trends.filter(t=>t.region==='US').length} ·
+        UAE: ${S.trends.filter(t=>t.region==='UAE').length} ·
+        Showing: ${filtered.length}
+      </div>
+    </div>
+    ${filtered.length===0?`<div class="ph">No topics match the selected filters.</div>`:`
+    <div class="trend-grid">
+      ${filtered.map(t=>`
+        <div class="trend-card${S.trendGenId===t.id?' loading':''}" onclick="genFromTrend('${t.id}')">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+            ${regionBdg(t.region)}
+            <span class="cat-bdg">${esc(t.category)}</span>
+          </div>
+          <div class="trend-ttl">${esc(t.title)}</div>
+          <div class="trend-sum">${esc(t.summary)}</div>
+          <div class="trend-ft">
+            <div style="font-size:10px;color:var(--text3)">${(t.sources||[]).slice(0,2).map(s=>`<span>${esc(s)}</span>`).join(' · ')}</div>
+            ${S.trendGenId===t.id
+              ?`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><span class="spin"></span>Generating…</div>`
+              :`<button class="trend-gen-btn" onclick="event.stopPropagation();genFromTrend('${t.id}')">✦ Write in Kannada</button>`}
+          </div>
+        </div>`).join('')}
+    </div>`}`:``}`}
+  </div>`;
 }
 
-function updatePreview() {
-  document.getElementById('artPreview').innerHTML = `
-    <div class="preview-hl">${document.getElementById('outHl').value}</div>
-    <div class="preview-sub">${document.getElementById('outSub').value}</div>
-    <div class="preview-body">${document.getElementById('outBody').value}</div>`;
+// ── GENERATE ──────────────────────────────────────────────────
+function renderGen() {
+  const mArts = S.arts.filter(a => a.user_id === S.user.id);
+  const td = mArts.filter(a => a.created_at?.slice(0,10) === todayStr()).length;
+  return `<div class="fade">
+    <div class="pg-hd"><div class="pg-ttl">✦ Generate Article</div><div class="pg-sub">Paste a news URL or article content — AI writes a fresh Kannada article</div></div>
+    ${!S.apiKey?`<div class="alert warn">⚠ API key not set. Go to Settings to add your Anthropic API key.</div>`:''}
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><div class="stat-lbl">Today</div><div class="stat-val">${td}</div></div>
+      <div class="stat"><div class="stat-lbl">My Total</div><div class="stat-val">${mArts.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Site Total</div><div class="stat-val">${S.arts.length}</div></div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:10px">Input Source</div>
+      <div class="toggle" style="margin-bottom:.875rem">
+        <button class="tgl${S.itype==='url'?' on':''}" onclick="setIT('url')">🔗 News URL</button>
+        <button class="tgl${S.itype==='content'?' on':''}" onclick="setIT('content')">📋 Paste Content</button>
+      </div>
+      ${S.itype==='url'
+        ?`<label>English News Article URL</label><input id="src" type="url" value="${esc(S.saved)}" placeholder="https://timesofindia.indiatimes.com/…" style="margin-bottom:10px">`
+        :`<label>Paste Article Text (English)</label><textarea id="src" rows="7" style="margin-bottom:10px">${esc(S.saved)}</textarea>`}
+      ${S.err?`<div class="alert err">${esc(S.err)}</div>`:''}
+      ${S.ok?`<div class="alert ok">${esc(S.ok)}</div>`:''}
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="primary" onclick="doGen()" ${S.genning?'disabled':''} style="min-width:220px;justify-content:center;padding:10px">
+          ${S.genning?`<span class="spin"></span> Generating…`:'✦ Generate Kannada Article'}
+        </button>
+        ${S.genning?`<span style="font-size:11px;color:var(--text2)">15–30 seconds…</span>`:''}
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap">
+        <span>✓ Original Kannada journalism</span><span>✓ Google Discover optimised</span><span>✓ Saved to Supabase</span>
+      </div>
+    </div>
+    ${S.genned?renderOutput(S.genned):''}
+  </div>`;
 }
 
-// ════════════════════════════════════════════════════════
-// SAVE & PUBLISH
-// ════════════════════════════════════════════════════════
-function collectFields() {
-  return {
-    user_id:      user.id,
-    user_name:    user.name,
-    username:     user.username,
-    headline:     document.getElementById('outHl').value,
-    subheadline:  document.getElementById('outSub').value,
-    article_html: document.getElementById('outBody').value,
-    seo_title:    document.getElementById('outSeoTit').value,
-    meta_description: document.getElementById('outMeta').value,
-    slug:         document.getElementById('outSlug').value,
-    keywords:     genData?.keywords || [],
-    schema_type:  genData?.schema_type || 'NewsArticle',
-    discover_score: genData?.discover_score || null,
-    discover_tip:   genData?.discover_tip || null,
-    word_count:   genData?.word_count || null,
-    category:     genData?.category || document.getElementById('artCat').value,
-    source_url:   document.getElementById('srcUrl').value || null,
-    created_at:   new Date().toISOString()
-  };
+// ── OUTPUT ────────────────────────────────────────────────────
+function renderOutput(art) {
+  const kw = (art.keywords||[]).map(k=>`<span style="display:inline-block;padding:2px 8px;background:var(--bg2);border-radius:100px;font-size:11px;margin:0 3px 4px 0;border:0.5px solid var(--bd)" class="kn">${esc(k)}</span>`).join('');
+  const wc = art.word_count || art.wordCount || (art.article||'').split(/\s+/).length;
+  return `<div class="output-box fade">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:12px;font-weight:600;color:var(--text2)">GENERATED ARTICLE</div><div style="font-size:11px;color:var(--text3)">~${wc} words · Saved to database</div></div>
+      <div style="display:flex;gap:8px"><button onclick="cpAll()" class="sm">Copy All</button><span id="cps" style="font-size:11px;color:var(--stx);display:none">✓ Copied!</span></div>
+    </div>
+    <div style="padding-bottom:1.25rem;border-bottom:0.5px solid var(--bd);margin-bottom:1.25rem">
+      <div class="kn" style="font-size:21px;font-weight:600;line-height:1.4;margin-bottom:7px">${esc(art.headline)}</div>
+      <div class="kn" style="font-size:14px;color:var(--text2)">${esc(art.subheadline)}</div>
+    </div>
+    <div style="margin-bottom:1.25rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Google Discover Score</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px">${scoreBar(art.discover_score||art.discoverScore||0)}</div>
+        ${(art.discover_tip||art.discoverTip)?`<div style="font-size:12px;color:var(--text2);background:var(--bg2);padding:6px 10px;border-radius:var(--r);flex:2;min-width:180px">💡 ${esc(art.discover_tip||art.discoverTip)}</div>`:''}
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">SEO Metadata</div>
+    <div class="seo-grid">
+      ${seoF('SEO Title',art.seo_title||art.seoTitle,true)}
+      ${seoF('Meta Description',art.meta_description||art.metaDescription,true)}
+      <div class="seo-item"><div class="seo-lbl">URL Slug</div><div class="seo-val" style="font-family:'DM Mono',monospace;font-size:11px">/${esc(art.slug)}/</div></div>
+      <div class="seo-item"><div class="seo-lbl">Schema</div><div class="seo-val">${esc(art.schema_type||art.schema||'NewsArticle')}</div></div>
+    </div>
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem">
+      <div class="seo-lbl" style="margin-bottom:6px">Focus Keywords</div>
+      <div>${kw}</div>
+    </div>
+    ${(art.image_alt||art.imageAlt)?`<div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem"><div class="seo-lbl" style="margin-bottom:4px">Featured Image Alt Text</div><div class="kn" style="font-size:12px">${esc(art.image_alt||art.imageAlt)}</div></div>`:''}
+    <div style="border-top:0.5px solid var(--bd);padding-top:1.25rem;margin-top:.5rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:1rem">Article Content</div>
+      <div class="kn" style="font-size:15px;line-height:2.1;white-space:pre-wrap">${esc(art.article)}</div>
+    </div>
+    <div style="margin-top:1rem;padding-top:.875rem;border-top:0.5px solid var(--bd);font-size:11px;color:var(--stx)">✓ Saved to Supabase · Original Kannada journalism · Copyright free</div>
+  </div>`;
 }
 
-async function saveDraft() {
-  const btn = document.getElementById('saveDraftBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Saving…';
+// ── MY ARTICLES ───────────────────────────────────────────────
+function renderMine() {
+  const mArts = S.arts.filter(a => a.user_id === S.user.id);
+  const td = mArts.filter(a => a.created_at?.slice(0,10) === todayStr()).length;
+  const wk = mArts.filter(a => a.created_at?.slice(0,10) >= weekAgo()).length;
+  return `<div class="fade">
+    <div class="pg-hd"><div class="pg-ttl">My Articles</div><div class="pg-sub">${mArts.length} articles — stored in Supabase</div></div>
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val">${mArts.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Today</div><div class="stat-val">${td}</div></div>
+      <div class="stat"><div class="stat-lbl">This Week</div><div class="stat-val">${wk}</div></div>
+    </div>
+    <div class="card" style="padding:0">
+      ${!mArts.length?`<div class="ph">No articles yet.<br>Use Generate Article or click any trending topic.</div>`:
+        mArts.map(a=>`<div class="art-item" onclick="toggleX('${a.id}')">
+          <div style="font-size:14px;font-weight:500;font-family:'Noto Sans Kannada',sans-serif">${esc(a.headline)}</div>
+          <div class="art-meta">
+            ${a.region?regionBdg(a.region):''}
+            <span>${fD(a.created_at)}, ${fT(a.created_at)}</span>
+            ${a.discover_score?`<span style="color:var(--stx);font-weight:500">Discover: ${a.discover_score}/10</span>`:''}
+            <span class="bdg bdg-saved">Saved</span>
+          </div>
+          ${S.xid===a.id?`<div style="margin-top:.875rem;padding-top:.875rem;border-top:0.5px solid var(--bd)">
+            <div class="seo-grid">${seoF('SEO Title',a.seo_title,true)}${seoF('Slug','/'+(a.slug||'')+'/')}</div>
+            <div class="kn" style="font-size:14px;line-height:2;white-space:pre-wrap;margin-top:.875rem">${esc(a.article)}</div>
+            <div style="display:flex;gap:8px;margin-top:.875rem">
+              <button onclick="event.stopPropagation();cpArtObj(${JSON.stringify(a).replace(/"/g,'&quot;')})" class="sm">Copy Article</button>
+              <button onclick="event.stopPropagation();delArt('${a.id}')" class="sm danger">Delete</button>
+            </div>
+          </div>`:''}
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────
+function renderSettings() {
+  return `<div class="fade">
+    <div class="pg-hd"><div class="pg-ttl">Settings</div><div class="pg-sub">API credentials and account preferences</div></div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:5px">Anthropic API Key</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Required for article generation. Get yours at <a href="https://console.anthropic.com/keys" target="_blank">console.anthropic.com</a><br>
+        Stored encrypted in Supabase — never exposed in code.
+      </div>
+      ${S.settingsMsg?`<div class="alert ok">${esc(S.settingsMsg)}</div>`:''}
+      <label>API Key</label>
+      <input id="ak" type="password" value="${esc(S.apiKey)}" placeholder="sk-ant-api03-…" style="font-family:'DM Mono',monospace;margin-bottom:10px">
+      <button onclick="saveKey()">Save API Key</button>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:5px">Change Password</div>
+      <div class="form-row">
+        <div><label>New Password</label><input id="cp1" type="password" placeholder="Min 6 characters"></div>
+        <div><label>Confirm Password</label><input id="cp2" type="password" placeholder="Repeat"></div>
+      </div>
+      <button onclick="changePass()">Update Password</button>
+    </div>
+  </div>`;
+}
+
+// ── ADMIN: DASHBOARD ──────────────────────────────────────────
+function renderDash() {
+  const writers = S.users.filter(u => u.role==='writer');
+  const td = S.arts.filter(a => a.created_at?.slice(0,10)===todayStr());
+  const wk = S.arts.filter(a => a.created_at?.slice(0,10)>=weekAgo());
+  const rows = writers.map(u => {
+    const ua = S.arts.filter(a => a.user_id===u.id);
+    return {...u, tot:ua.length, td:ua.filter(a=>a.created_at?.slice(0,10)===todayStr()).length,
+      wk:ua.filter(a=>a.created_at?.slice(0,10)>=weekAgo()).length,
+      avg:ua.length?Math.round(ua.reduce((s,a)=>s+(a.discover_score||0),0)/ua.length*10)/10:0};
+  }).sort((a,b)=>b.tot-a.tot);
+  return `<div class="fade">
+    <div class="pg-hd"><div class="pg-ttl">Dashboard</div><div class="pg-sub">Content production overview · Supabase database</div></div>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-lbl">Total Articles</div><div class="stat-val">${S.arts.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Writers</div><div class="stat-val">${writers.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Today</div><div class="stat-val">${td.length}</div></div>
+      <div class="stat"><div class="stat-lbl">This Week</div><div class="stat-val">${wk.length}</div></div>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="card-hd">Writer Performance</div>
+      ${!writers.length?`<div class="ph">No writers yet. Add from Users tab.</div>`:
+        `<table class="tbl"><thead><tr><th>Writer</th><th>Today</th><th>This Week</th><th>Total</th><th>Avg Discover</th></tr></thead><tbody>
+        ${rows.map(u=>`<tr><td><div style="font-weight:500">${esc(u.name)}</div><div style="font-size:11px;color:var(--text2)">@${esc(u.username)}</div></td><td><strong>${u.td}</strong></td><td>${u.wk}</td><td>${u.tot}</td><td>${u.avg?`<span style="color:var(--stx);font-weight:500">${u.avg}/10</span>`:'—'}</td></tr>`).join('')}
+        </tbody></table>`}
+    </div>
+    ${S.arts.length?`<div class="card" style="padding:0;margin-top:1rem">
+      <div class="card-hd">Recent Articles</div>
+      ${[...S.arts].slice(0,8).map(a=>`<div style="padding:.875rem 1.25rem;border-bottom:0.5px solid var(--bd);display:flex;gap:12px;align-items:center">${a.region?regionBdg(a.region):'<span></span>'}<div class="kn" style="font-size:13px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.headline)}</div><div style="font-size:11px;color:var(--text2);flex-shrink:0">${esc(a.user_name)} · ${fD(a.created_at)}</div>${a.discover_score?`<span style="font-size:11px;color:var(--stx);font-weight:500;flex-shrink:0">${a.discover_score}/10</span>`:''}</div>`).join('')}
+    </div>`:''}
+  </div>`;
+}
+
+// ── ADMIN: USERS ──────────────────────────────────────────────
+function renderUsers() {
+  return `<div class="fade">
+    <div class="pg-hd"><div class="pg-ttl">Users</div><div class="pg-sub">Manage team members</div></div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:500;margin-bottom:.875rem">Create New User</div>
+      ${S.err?`<div class="alert err">${esc(S.err)}</div>`:''}
+      ${S.ok?`<div class="alert ok">${esc(S.ok)}</div>`:''}
+      <div class="form-row">
+        <div><label>Full Name</label><input id="nn" type="text" placeholder="e.g. Priya Kumar"></div>
+        <div><label>Username</label><input id="nu" type="text" placeholder="e.g. priya_kumar"></div>
+        <div><label>Password</label><input id="np" type="password" placeholder="Min 6 characters"></div>
+        <div><label>Role</label><select id="nr"><option value="writer">Writer</option><option value="admin">Admin</option></select></div>
+      </div>
+      <button onclick="doCreateUser()" id="createUserBtn">Create User</button>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="card-hd">All Users (${S.users.length})</div>
+      <table class="tbl"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Joined</th><th>Articles</th><th></th></tr></thead><tbody>
+        ${S.users.map(u=>{
+          const ac = S.arts.filter(a=>a.user_id===u.id).length;
+          return `<tr><td style="font-weight:500">${esc(u.name)}</td><td><code>@${esc(u.username)}</code></td><td><span class="bdg bdg-${u.role}">${u.role}</span></td><td style="color:var(--text2)">${fD(u.created_at)}</td><td>${ac}</td><td>${u.id!==S.user.id?`<button onclick="doDelUser('${u.id}')" class="sm danger">Delete</button>`:`<span style="font-size:11px;color:var(--text2)">You</span>`}</td></tr>`;
+        }).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+// ── ADMIN: ALL ARTICLES ───────────────────────────────────────
+function renderAllArts() {
+  return `<div class="fade">
+    <div class="pg-hd"><div class="pg-ttl">All Articles (${S.arts.length})</div><div class="pg-sub">Complete history · Supabase database</div></div>
+    <div class="card" style="padding:0">
+      ${!S.arts.length?`<div class="ph">No articles yet.</div>`:
+        S.arts.map(a=>`<div class="art-item" onclick="toggleX('${a.id}')">
+          <div style="font-size:14px;font-weight:500;font-family:'Noto Sans Kannada',sans-serif">${esc(a.headline)}</div>
+          <div class="art-meta">${a.region?regionBdg(a.region):''}<span style="font-weight:500">${esc(a.user_name)}</span><span>${fD(a.created_at)}, ${fT(a.created_at)}</span>${a.discover_score?`<span style="color:var(--stx);font-weight:500">Discover ${a.discover_score}/10</span>`:''}</div>
+          ${S.xid===a.id?`<div style="margin-top:.875rem;padding-top:.875rem;border-top:0.5px solid var(--bd)">
+            <div class="seo-grid">${seoF('SEO Title',a.seo_title,true)}${seoF('Meta',a.meta_description,true)}</div>
+            <div class="kn" style="font-size:14px;line-height:2;white-space:pre-wrap;margin-top:.875rem">${esc(a.article)}</div>
+            <div style="display:flex;gap:8px;margin-top:.875rem">
+              <button onclick="event.stopPropagation();cpArt('${a.id}')" class="sm">Copy</button>
+              <button onclick="event.stopPropagation();delArt('${a.id}')" class="sm danger">Delete</button>
+            </div>
+          </div>`:''}
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ── MAIN RENDER ───────────────────────────────────────────────
+function render() {
+  const el = document.getElementById('app');
+  if (S.pg==='boot') { el.innerHTML=`<div style="min-height:100vh;display:flex;align-items:center;justify-content:center"><div style="display:flex;align-items:center;gap:10px;color:var(--text2)"><div class="spin"></div>Connecting to Supabase…</div></div>`; return; }
+  if (S.pg==='setup') { el.innerHTML=renderSetup(); return; }
+  if (S.pg==='login') { el.innerHTML=renderLogin(); return; }
+  const isAdmin = S.user?.role==='admin';
+  let main;
+  if (isAdmin) { main=({dash:renderDash,users:renderUsers,arts:renderAllArts,trending:renderTrending,gen:renderGen,settings:renderSettings}[S.atab]||renderDash)(); }
+  else { main=({trending:renderTrending,gen:renderGen,mine:renderMine,settings:renderSettings}[S.tab]||renderTrending)(); }
+  el.innerHTML=`<div class="app-shell">${renderSidebar()}<div class="page">${main}</div></div>`;
+}
+
+// ── AUTH ACTIONS ──────────────────────────────────────────────
+async function doLogin() {
+  const u = document.getElementById('lu')?.value?.trim();
+  const p = document.getElementById('lp')?.value;
+  if (!u||!p) { S.lErr='Please enter username and password.'; render(); return; }
+  // Guard: db must be initialised (Supabase credentials must be set)
+  if (!db) { S.lErr='Database not configured. Set SUPABASE_URL and SUPABASE_ANON in the file, then refresh.'; render(); return; }
+  const btn = document.getElementById('loginBtn');
+  if (btn) { btn.disabled=true; btn.innerHTML='<span class="spin"></span> Signing in…'; }
   try {
-    const { error } = await db.from('tv_articles').insert([{ ...collectFields(), wp_status: 'draft' }]);
-    if (error) throw error;
-    toast('Draft saved to CMS!', 'success');
+    const {data,error} = await db.from('cms_users').select('*').eq('username',u).single();
+    if (error||!data) throw new Error('User not found.');
+    const ok = await checkPw(p, data.password);
+    if (!ok) throw new Error('Incorrect password.');
+    S.user = data;
+    S.pg = 'app';
+    S.lErr = '';
+    sessionStorage.setItem('kdp_sess', JSON.stringify({id:data.id,username:data.username}));
+    // Load data
+    await refreshData();
+    S.apiKey = await DB.getApiKey(data.id);
+    render();
   } catch(e) {
-    toast('Save failed: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.innerHTML = '💾 Save Draft';
+    S.lErr = e.message;
+    render();
   }
 }
 
-async function pushToWP() {
-  if (!wpCfg.user || !wpCfg.pass) { toast('Configure WordPress settings first', 'error'); showPage('settings'); return; }
-  const btn = document.getElementById('pushBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Pushing…';
+async function doLogout() {
+  sessionStorage.removeItem('kdp_sess');
+  S.user=null; S.pg='login'; S.genned=null; S.err=null; S.ok=null; S.apiKey=''; S.arts=[]; S.users=[];
+  render();
+}
 
-  const wpStatus = document.getElementById('pubStatus').value;
-  const wpCatId  = document.getElementById('wpCat').value;
-  const fields   = collectFields();
+async function refreshData() {
+  S.users = await DB.getUsers();
+  S.arts  = await DB.getArticles();
+}
 
+// ── NAV ───────────────────────────────────────────────────────
+function setTab(t)  { S.tab=t;  S.err=null; S.ok=null; S.xid=null; render(); }
+function setATab(t) { S.atab=t; S.err=null; S.ok=null; S.xid=null; render(); }
+function setIT(t)   { S.itype=t; S.err=null; S.saved=''; render(); }
+function toggleX(id){ S.xid=S.xid===id?null:id; render(); }
+function setFilter(type,val) { if(type==='region') S.regionFilter=val; else S.catFilter=val; render(); }
+
+// ── TRENDING ──────────────────────────────────────────────────
+async function loadTrending(force=false) {
+  if (S.trendLoading) return;
+  if (S.trendLoaded&&!force) return;
+  S.trendLoading=true; S.trendErr=null; render();
   try {
-    const payload = {
-      title:   fields.headline,
-      content: fields.article_html,
-      excerpt: fields.meta_description,
-      slug:    fields.slug,
-      status:  wpStatus,
+    const data = await apiCall(SYS_TRENDING,'Search for the top 12 trending news stories right now from India, United States, and UAE. Return as JSON array.',true);
+    S.trends = Array.isArray(data)?data:[];
+    S.trendLoaded=true; S.trendLoading=false; render();
+  } catch(e) { S.trendErr=e.message; S.trendLoading=false; render(); }
+}
+
+async function genFromTrend(id) {
+  const t = S.trends.find(x=>x.id===id);
+  if (!t) return;
+  S.trendGenId=id; S.genning=true; render();
+  try {
+    const prompt = `Write a fresh original Kannada news article about this trending story:\n\nTitle: ${t.title}\nSummary: ${t.summary}\nRegion: ${t.region}\nCategory: ${t.category}\nSources: ${(t.sources||[]).join(', ')}\n\nSearch the web for latest details. Write original Kannada — not a translation. Optimise for Google Discover.`;
+    const art = await apiCall(SYS_ARTICLE, prompt, true);
+    const rec = {
+      user_id: S.user.id, user_name: S.user.name, username: S.user.username,
+      headline: art.headline, subheadline: art.subheadline, article: art.article,
+      seo_title: art.seoTitle, meta_description: art.metaDescription, slug: art.slug,
+      keywords: art.keywords||[], schema_type: art.schema||'NewsArticle',
+      discover_score: art.discoverScore, discover_tip: art.discoverTip,
+      image_alt: art.imageAlt, word_count: art.wordCount,
+      region: t.region, category: t.category, input_type: 'trend', trend_title: t.title
     };
-    if (wpCatId) payload.categories = [parseInt(wpCatId)];
-
-    // Auto-create/find tags
-    if (fields.keywords?.length) {
-      const tagIds = await getOrCreateTags(fields.keywords);
-      if (tagIds.length) payload.tags = tagIds;
-    }
-
-    const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/posts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) },
-      body: JSON.stringify(payload)
-    });
-
-    if (!r.ok) { const e = await r.json(); throw new Error(e.message || 'WP error'); }
-    const wpPost = await r.json();
-
-    // Save to DB
-    const dbStatus = wpStatus === 'publish' ? 'published' : 'wp_draft';
-    await db.from('tv_articles').insert([{ ...fields, wp_post_id: wpPost.id, wp_status: dbStatus }]);
-
-    toast(wpStatus === 'publish' ? `🎉 Published! Post #${wpPost.id}` : `📝 Saved as WP Draft #${wpPost.id}`, 'success');
-
-    if (wpPost.link && wpStatus === 'publish') {
-      setTimeout(() => toast(`<a href="${wpPost.link}" target="_blank" style="color:var(--blue)">View article →</a>`, 'info'), 1200);
-    }
-  } catch(e) {
-    toast('Publish failed: ' + e.message, 'error');
-    console.error(e);
-  } finally {
-    btn.disabled = false; btn.innerHTML = '🚀 Push to WordPress';
-  }
+    const saved = await DB.saveArticle(rec);
+    S.arts = [saved, ...S.arts];
+    S.genned = saved;
+    S.trendGenId=null; S.genning=false;
+    if (S.user.role==='admin') S.atab='gen'; else S.tab='gen';
+    render();
+  } catch(e) { S.trendGenId=null; S.genning=false; S.trendErr=e.message; render(); }
 }
 
-async function getOrCreateTags(keywords) {
-  const ids = [];
-  for (const kw of keywords.slice(0, 5)) {
-    try {
-      const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) },
-        body: JSON.stringify({ name: kw })
-      });
-      if (r.ok) { ids.push((await r.json()).id); }
-      else if (r.status === 400) {
-        // Already exists — search
-        const s = await fetch(`${wpCfg.url}/wp-json/wp/v2/tags?search=${encodeURIComponent(kw)}`, {
-          headers: { 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) }
-        });
-        if (s.ok) { const t = await s.json(); if (t.length) ids.push(t[0].id); }
+// ── GENERATE ──────────────────────────────────────────────────
+async function doGen() {
+  const el = document.getElementById('src');
+  const input = el?.value?.trim();
+  if (!input) { S.err='Please enter a URL or paste article content.'; render(); return; }
+  S.saved=input; S.genning=true; S.err=null; S.ok=null; S.genned=null; render();
+  try {
+    const msg = S.itype==='url'
+      ? `News article URL: ${input}\n\nFetch this page, find authentic details, then write a fresh original Kannada article. NOT a translation. Optimise for Google Discover.`
+      : `Source content:\n\n${input}\n\nWrite a fresh original Kannada article. NOT a translation. Optimise for Google Discover.`;
+    const art = await apiCall(SYS_ARTICLE, msg, S.itype==='url');
+    const rec = {
+      user_id: S.user.id, user_name: S.user.name, username: S.user.username,
+      headline: art.headline, subheadline: art.subheadline, article: art.article,
+      seo_title: art.seoTitle, meta_description: art.metaDescription, slug: art.slug,
+      keywords: art.keywords||[], schema_type: art.schema||'NewsArticle',
+      discover_score: art.discoverScore, discover_tip: art.discoverTip,
+      image_alt: art.imageAlt, word_count: art.wordCount,
+      input_type: S.itype, source_url: S.itype==='url'?input:null
+    };
+    const saved = await DB.saveArticle(rec);
+    S.arts = [saved, ...S.arts];
+    S.genned = saved;
+    S.ok = '✓ Article generated and saved to Supabase!';
+    S.genning=false; render();
+  } catch(e) { S.err=e.message; S.genning=false; render(); }
+}
+
+// ── USERS ─────────────────────────────────────────────────────
+async function doCreateUser() {
+  const name  = document.getElementById('nn')?.value?.trim();
+  const uname = document.getElementById('nu')?.value?.trim();
+  const pass  = document.getElementById('np')?.value;
+  const role  = document.getElementById('nr')?.value;
+  if (!name||!uname||!pass) { S.err='All fields are required.'; render(); return; }
+  if (pass.length<6) { S.err='Password must be at least 6 characters.'; render(); return; }
+  if (S.users.find(u=>u.username===uname)) { S.err=`Username "@${uname}" already taken.`; render(); return; }
+  const btn = document.getElementById('createUserBtn');
+  if (btn) btn.disabled=true;
+  try {
+    const hashed = await hashPw(pass);
+    const nu = await DB.createUser({username:uname, password:hashed, name, role});
+    S.users = [...S.users, nu];
+    S.ok=`User "${name}" created.`; S.err=null; render();
+  } catch(e) { S.err=e.message; render(); }
+}
+
+async function doDelUser(id) {
+  if (!confirm('Delete this user? Their articles will remain.')) return;
+  try {
+    await DB.deleteUser(id);
+    S.users=S.users.filter(u=>u.id!==id);
+    S.ok='User deleted.'; render();
+  } catch(e) { S.err=e.message; render(); }
+}
+
+async function delArt(id) {
+  if (!confirm('Delete this article permanently?')) return;
+  try {
+    await DB.deleteArticle(id);
+    S.arts=S.arts.filter(a=>a.id!==id);
+    S.xid=null; render();
+  } catch(e) { alert('Delete failed: '+e.message); }
+}
+
+// ── SETTINGS ACTIONS ──────────────────────────────────────────
+async function saveKey() {
+  const k = document.getElementById('ak')?.value?.trim();
+  if (k&&!k.startsWith('sk-ant-')) { alert('Invalid key. Anthropic keys start with sk-ant-'); return; }
+  try {
+    await DB.saveApiKey(S.user.id, k);
+    S.apiKey=k; S.settingsMsg='API key saved to Supabase.'; render();
+  } catch(e) { alert('Save failed: '+e.message); }
+}
+
+async function changePass() {
+  const p1 = document.getElementById('cp1')?.value;
+  const p2 = document.getElementById('cp2')?.value;
+  if (!p1||p1.length<6) { alert('Password must be at least 6 characters.'); return; }
+  if (p1!==p2) { alert('Passwords do not match.'); return; }
+  try {
+    const hashed = await hashPw(p1);
+    await DB.updateUser(S.user.id, {password:hashed});
+    S.users=S.users.map(u=>u.id===S.user.id?{...u,password:hashed}:u);
+    S.settingsMsg='Password updated.'; render();
+  } catch(e) { alert('Update failed: '+e.message); }
+}
+
+// ── COPY ──────────────────────────────────────────────────────
+function cpAll() {
+  const a = S.genned; if (!a) return;
+  const t = `HEADLINE: ${a.headline}\nSUBHEADLINE: ${a.subheadline}\n\nSEO Title: ${a.seo_title||a.seoTitle}\nMeta: ${a.meta_description||a.metaDescription}\nSlug: /${a.slug}/\nDiscover: ${a.discover_score||a.discoverScore}/10\nKeywords: ${(a.keywords||[]).join(', ')}\n\n── ARTICLE ──\n\n${a.article}`;
+  navigator.clipboard.writeText(t).then(()=>{const el=document.getElementById('cps');if(el){el.style.display='inline';setTimeout(()=>el.style.display='none',2000);}}).catch(()=>{});
+}
+function cpArt(id) { const a=S.arts.find(x=>x.id===id); if(a) navigator.clipboard.writeText(`${a.headline}\n\n${a.article}`).catch(()=>{}); }
+function cpArtObj(a) { navigator.clipboard.writeText(`${a.headline}\n\n${a.article}`).catch(()=>{}); }
+
+Object.assign(window,{doLogin,doLogout,setTab,setATab,setIT,toggleX,setFilter,loadTrending,genFromTrend,doGen,doCreateUser,doDelUser,delArt,saveKey,changePass,cpAll,cpArt,cpArtObj});
+
+// ── BOOT ──────────────────────────────────────────────────────
+(async function boot() {
+  db = initDB();                        // db is now the Supabase client, or null if unconfigured
+  if (!db) { S.pg='setup'; render(); return; }
+  // Check session
+  try {
+    const sess = sessionStorage.getItem('kdp_sess');
+    if (sess) {
+      const {id} = JSON.parse(sess);
+      const {data} = await db.from('cms_users').select('*').eq('id',id).single();
+      if (data) {
+        S.user = data;
+        S.pg   = 'app';
+        await refreshData();
+        S.apiKey = await DB.getApiKey(data.id);
+        render();
+        return;
       }
-    } catch(_) {}
-  }
-  return ids;
-}
-
-function resetGen() {
-  genData = null; fetchedText = '';
-  document.getElementById('srcUrl').value = '';
-  document.getElementById('pasteText').value = '';
-  document.getElementById('fetchPreview').classList.add('hidden');
-  document.getElementById('outContent').classList.add('hidden');
-  document.getElementById('outEmpty').classList.remove('hidden');
-  toast('Ready for new article', 'info');
-}
-
-// ════════════════════════════════════════════════════════
-// TOAST
-// ════════════════════════════════════════════════════════
-function toast(msg, type = 'info') {
-  const icons = { success:'✅', error:'❌', info:'ℹ️' };
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span>${icons[type]||'•'}</span><span>${msg}</span>`;
-  document.getElementById('toastWrap').appendChild(el);
-  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(), 300); }, 4500);
-}
+    }
+  } catch(e) {}
+  S.pg='login'; render();
+})();
 </script>
 </body>
 </html>
