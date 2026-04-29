@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrendVerse CMS Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+  <style>
+    :root {
+      --bg:         #080c14;
+      --surface:    #0f1623;
+      --surface2:   #161e2e;
+      --border:     #1e2d42;
+      --accent:     #f97316;
+      --accent-dim: rgba(249,115,22,0.12);
+      --blue:       #38bdf8;
+      --green:      #34d399;
+      --red:        #f87171;
+      --yellow:     #fbbf24;
+      --text:       #e2e8f0;
+      --text-mid:   #94a3b8;
+      --text-dim:   #475569;
+      --radius:     10px;
+      --font-ui:    'Plus Jakarta Sans', sans-serif;
+      --font-head:  'Playfair Display', serif;
+      --font-mono:  'JetBrains Mono', monospace;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--font-ui); background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+    /* ── LOGIN ── */
+    .login-screen {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background: radial-gradient(ellipse 60% 50% at 20% 60%, rgba(249,115,22,0.08) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 40% at 80% 20%, rgba(56,189,248,0.06) 0%, transparent 70%), var(--bg);
+      position:relative;
+    }
+    .login-screen::before {
+      content:''; position:absolute; inset:0;
+      background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size:48px 48px;
+    }
+    .login-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:18px;
+      padding:52px 44px; width:420px; position:relative; z-index:1;
+      box-shadow:0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .login-logo { text-align:center; margin-bottom:36px; }
+    .login-logo .brand { font-family:var(--font-head); font-size:32px; font-weight:900; color:var(--accent); }
+    .login-logo .tagline {
+      display:block; font-size:11px; color:var(--text-dim); letter-spacing:0.14em;
+      text-transform:uppercase; margin-top:6px;
+    }
+    .login-logo .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin:0 6px; vertical-align:middle; }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom:16px; }
+    label { display:block; font-size:11.5px; font-weight:700; color:var(--text-mid); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:6px; }
+    input, textarea, select {
+      width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius);
+      padding:11px 14px; color:var(--text); font-family:var(--font-ui); font-size:14px; outline:none;
+      transition:border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+    input::placeholder, textarea::placeholder { color:var(--text-dim); }
+    textarea { resize:vertical; min-height:120px; line-height:1.7; }
+    select option { background:var(--surface); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display:inline-flex; align-items:center; gap:7px; padding:10px 20px;
+      border-radius:var(--radius); font-family:var(--font-ui); font-size:13.5px;
+      font-weight:700; cursor:pointer; border:none; transition:all 0.18s; text-decoration:none; white-space:nowrap;
+    }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { background:#ea6c0a; transform:translateY(-1px); box-shadow:0 10px 24px rgba(249,115,22,0.28); }
+    .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+    .btn-secondary:hover { border-color:var(--text-mid); background:var(--border); }
+    .btn-success { background:var(--green); color:#000; }
+    .btn-success:hover { background:#10b981; transform:translateY(-1px); box-shadow:0 10px 24px rgba(52,211,153,0.25); }
+    .btn-ghost { background:transparent; color:var(--text-mid); border:1px solid var(--border); }
+    .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-danger { background:var(--red); color:#fff; }
+    .btn-full { width:100%; justify-content:center; }
+    .btn-sm { padding:6px 14px; font-size:12px; }
+    .btn:disabled { opacity:0.45; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+
+    /* ── APP SHELL ── */
+    .app { display:flex; min-height:100vh; }
+    .sidebar {
+      width:224px; background:var(--surface); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100;
+    }
+    .sidebar-logo { padding:22px 20px; border-bottom:1px solid var(--border); }
+    .sidebar-logo .name { font-family:var(--font-head); font-size:19px; color:var(--accent); }
+    .sidebar-logo .sub { font-size:10px; color:var(--text-dim); letter-spacing:0.12em; text-transform:uppercase; margin-top:3px; }
+    .sidebar-nav { flex:1; padding:10px 0; overflow-y:auto; }
+    .nav-section { padding:12px 18px 4px; font-size:10px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); }
+    .nav-item {
+      display:flex; align-items:center; gap:10px; padding:10px 20px;
+      cursor:pointer; color:var(--text-mid); font-size:13.5px; font-weight:600;
+      transition:all 0.15s; border-left:2px solid transparent;
+    }
+    .nav-item:hover { color:var(--text); background:rgba(255,255,255,0.04); }
+    .nav-item.active { color:var(--accent); background:var(--accent-dim); border-left-color:var(--accent); }
+    .nav-item .ico { font-size:15px; }
+    .sidebar-user {
+      padding:14px 18px; border-top:1px solid var(--border);
+      display:flex; align-items:center; gap:10px;
+    }
+    .user-avatar {
+      width:34px; height:34px; border-radius:50%; background:var(--accent-dim);
+      border:1.5px solid var(--accent); display:flex; align-items:center;
+      justify-content:center; font-size:14px; color:var(--accent); font-weight:800; flex-shrink:0;
+    }
+    .user-name { font-size:13px; font-weight:700; }
+    .user-role { font-size:11px; color:var(--text-dim); }
+    .logout-btn { margin-left:auto; background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:16px; padding:4px; line-height:1; }
+    .logout-btn:hover { color:var(--red); }
+
+    /* ── MAIN AREA ── */
+    .main { margin-left:224px; flex:1; min-height:100vh; }
+    .topbar {
+      background:var(--surface); border-bottom:1px solid var(--border);
+      padding:16px 28px; display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:50;
+    }
+    .page-title { font-family:var(--font-head); font-size:22px; font-weight:700; }
+    .wp-indicator { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-dim); }
+    .dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
+    .dot.on { background:var(--green); box-shadow:0 0 8px var(--green); }
+    .dot.off { background:var(--red); }
+    .content { padding:28px; max-width:1240px; }
+
+    /* ── CARDS ── */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; }
+    .card-title { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-mid); margin-bottom:14px; }
+
+    /* ── STAT GRID ── */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+    .stat-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+      padding:22px; position:relative; overflow:hidden;
+    }
+    .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent); }
+    .stat-card.green::after { background:var(--green); }
+    .stat-card.blue::after { background:var(--blue); }
+    .stat-card.yellow::after { background:var(--yellow); }
+    .stat-label { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:10px; }
+    .stat-value { font-family:var(--font-head); font-size:40px; font-weight:900; line-height:1; }
+    .stat-sub { font-size:11px; color:var(--text-dim); margin-top:6px; }
+
+    /* ── GENERATOR ── */
+    .gen-layout { display:grid; grid-template-columns:380px 1fr; gap:20px; align-items:start; }
+    .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
+    .panel-title { font-family:var(--font-head); font-size:18px; font-weight:700; margin-bottom:20px; }
+
+    .method-tabs { display:flex; background:var(--surface2); border-radius:8px; padding:3px; margin-bottom:16px; }
+    .method-tab { flex:1; padding:8px 4px; text-align:center; border-radius:6px; cursor:pointer; font-size:13px; font-weight:700; color:var(--text-dim); transition:all 0.2s; }
+    .method-tab.active { background:var(--accent); color:#fff; }
+
+    .url-row { display:flex; gap:8px; }
+    .url-row input { flex:1; }
+
+    .fetched-preview {
+      background:var(--surface2); border-radius:8px; padding:12px; font-size:12px;
+      color:var(--text-mid); max-height:140px; overflow-y:auto; line-height:1.7;
+      margin-bottom:12px; border:1px solid var(--border);
+    }
+
+    /* ── OUTPUT ── */
+    .empty-state { text-align:center; padding:60px 20px; color:var(--text-dim); }
+    .empty-state .ico { font-size:44px; margin-bottom:14px; display:block; }
+    .empty-state h3 { font-family:var(--font-head); font-size:18px; color:var(--text-mid); margin-bottom:8px; }
+    .empty-state p { font-size:13px; }
+
+    .gen-loading { text-align:center; padding:60px 20px; }
+    .gen-loading h3 { font-family:var(--font-head); font-size:18px; color:var(--text); margin:16px 0 6px; }
+    .gen-loading p { font-size:13px; color:var(--text-mid); }
+
+    /* Discover score */
+    .discover-box { display:flex; align-items:center; gap:18px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:18px; }
+    .score-ring {
+      width:64px; height:64px; border-radius:50%; border:3px solid var(--green);
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--font-head); font-size:24px; font-weight:900; color:var(--green); flex-shrink:0;
+    }
+    .score-ring.med { border-color:var(--yellow); color:var(--yellow); }
+    .score-ring.low { border-color:var(--red); color:var(--red); }
+
+    /* Fields */
+    .field { margin-bottom:16px; }
+    .char-count { font-family:var(--font-mono); font-size:11px; color:var(--text-dim); text-align:right; margin-top:4px; }
+    .char-count.warn { color:var(--yellow); }
+    .char-count.over { color:var(--red); }
+
+    /* SEO box */
+    .seo-box { border:1px solid rgba(249,115,22,0.25); border-radius:var(--radius); padding:16px; margin-bottom:16px; background:rgba(249,115,22,0.04); }
+    .seo-box-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); margin-bottom:14px; }
+
+    /* Keywords */
+    .kw-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .kw-tag { background:rgba(56,189,248,0.12); color:var(--blue); padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+
+    /* Preview */
+    .article-preview { background:var(--surface2); border-radius:var(--radius); padding:24px; margin-top:12px; }
+    .preview-hl { font-family:var(--font-head); font-size:22px; font-weight:700; line-height:1.35; margin-bottom:8px; }
+    .preview-sub { color:var(--text-mid); font-size:14px; line-height:1.6; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+    .preview-body { font-size:14px; line-height:1.85; }
+    .preview-body h2 { font-family:var(--font-head); font-size:17px; margin:18px 0 8px; }
+    .preview-body p { margin-bottom:12px; }
+    .preview-body strong { color:var(--text); }
+
+    /* Action row */
+    .action-row { display:flex; gap:8px; padding-top:16px; border-top:1px solid var(--border); flex-wrap:wrap; }
+
+    /* ── ARTICLES TABLE ── */
+    .table-wrap { border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); }
+    table { width:100%; border-collapse:collapse; }
+    th { text-align:left; padding:11px 16px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); border-bottom:1px solid var(--border); background:var(--surface); }
+    td { padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13.5px; vertical-align:middle; background:var(--surface); }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(255,255,255,0.025); }
+
+    /* ── BADGES ── */
+    .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+    .b-pub { background:rgba(52,211,153,0.12); color:var(--green); }
+    .b-draft { background:rgba(251,191,36,0.12); color:var(--yellow); }
+    .b-wp-draft { background:rgba(56,189,248,0.12); color:var(--blue); }
+    .b-cat { background:rgba(249,115,22,0.12); color:var(--accent); }
+
+    /* ── SETTINGS GRID ── */
+    .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+
+    /* ── SEARCH ROW ── */
+    .filter-row { display:flex; gap:12px; margin-bottom:20px; }
+    .filter-row input { flex:1; }
+    .filter-row select { width:160px; }
+
+    /* ── TOAST ── */
+    .toast-wrap { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+    .toast {
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:12px 16px; font-size:13px; font-weight:600; display:flex; align-items:center;
+      gap:8px; min-width:270px; box-shadow:0 12px 32px rgba(0,0,0,0.5);
+      animation:tin 0.3s ease; pointer-events:all;
+    }
+    .toast.success { border-left:3px solid var(--green); }
+    .toast.error   { border-left:3px solid var(--red); }
+    .toast.info    { border-left:3px solid var(--blue); }
+    @keyframes tin { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+
+    /* ── LOADER ── */
+    .spin { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.18); border-top-color:currentColor; border-radius:50%; animation:rotate 0.65s linear infinite; }
+    .spin.lg { width:44px; height:44px; border-width:3px; border-color:rgba(249,115,22,0.2); border-top-color:var(--accent); margin:0 auto; display:block; }
+    @keyframes rotate { to { transform:rotate(360deg); } }
+
+    /* ── HELPERS ── */
+    .hidden { display:none !important; }
+    .flex { display:flex; } .gap-2 { gap:8px; } .gap-3 { gap:12px; }
+    .mb-4 { margin-bottom:16px; } .mb-5 { margin-bottom:20px; }
+    .sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .sec-title { font-family:var(--font-head); font-size:20px; font-weight:700; }
+    .mono { font-family:var(--font-mono); font-size:12px; }
+    hr { border:none; border-top:1px solid var(--border); margin:20px 0; }
+    details > summary { cursor:pointer; font-size:13px; font-weight:700; color:var(--accent); user-select:none; list-style:none; }
+    details > summary::before { content:'▶ '; font-size:10px; }
+    details[open] > summary::before { content:'▼ '; }
+    ::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  </style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand">TrendVerse</div>
+      <span class="tagline">CMS Pro <span class="dot"></span> trendingverse.online</span>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input id="loginUser" type="text" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="loginErr" class="hidden" style="color:var(--red);font-size:13px;margin-bottom:12px;padding:8px 12px;background:rgba(248,113,113,0.08);border-radius:8px;"></div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">
+      <span id="loginBtnTxt">Sign In →</span>
+    </button>
+    <p style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:18px;">
+      Claude AI · GitHub Pages · Supabase · WordPress REST API
+    </p>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="name">TrendVerse</div>
+      <div class="sub">CMS Pro · English</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Content</div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="ico">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="showPage('new')" id="nav-new"><span class="ico">✍️</span>New Article</div>
+      <div class="nav-item" onclick="showPage('articles')" id="nav-articles"><span class="ico">📰</span>All Articles</div>
+      <div class="nav-section">System</div>
+      <div class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="ico">⚙️</span>Settings</div>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="uAvatar">A</div>
+      <div>
+        <div class="user-name" id="uName">Admin</div>
+        <div class="user-role" id="uRole">admin</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()" title="Sign out">⏻</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="wp-indicator">
+        <span class="dot" id="wpDot"></span>
+        <span id="wpTxt">Checking WordPress…</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Total Articles</div><div class="stat-value" id="sTot">—</div><div class="stat-sub">All time</div></div>
+          <div class="stat-card green"><div class="stat-label">Published</div><div class="stat-value" id="sPub">—</div><div class="stat-sub">Live on WordPress</div></div>
+          <div class="stat-card blue"><div class="stat-label">Drafts</div><div class="stat-value" id="sDraft">—</div><div class="stat-sub">Pending review</div></div>
+          <div class="stat-card yellow"><div class="stat-label">This Month</div><div class="stat-value" id="sMon">—</div><div class="stat-sub">Articles created</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recent Articles</div>
+          <div id="recentList"></div>
+        </div>
+      </div>
+
+      <!-- ===== NEW ARTICLE ===== -->
+      <div id="page-new" class="hidden">
+        <div class="gen-layout">
+
+          <!-- LEFT: INPUT -->
+          <div class="panel">
+            <div class="panel-title">📥 Source Input</div>
+
+            <div class="method-tabs">
+              <div class="method-tab active" onclick="setMethod('url')" id="tab-url">🔗 From URL</div>
+              <div class="method-tab" onclick="setMethod('paste')" id="tab-paste">📋 Paste Text</div>
+            </div>
+
+            <div id="urlArea">
+              <div class="form-group">
+                <label>Trending Article URL</label>
+                <div class="url-row">
+                  <input id="srcUrl" type="url" placeholder="https://example.com/trending-article">
+                  <button class="btn btn-secondary btn-sm" onclick="doFetchUrl()" id="fetchBtn">Fetch</button>
+                </div>
+              </div>
+              <div id="fetchPreview" class="fetched-preview hidden"></div>
+            </div>
+
+            <div id="pasteArea" class="hidden">
+              <div class="form-group">
+                <label>Paste Source Content</label>
+                <textarea id="pasteText" rows="9" placeholder="Paste news article, press release, or raw content here…"></textarea>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="form-group">
+              <label>Category</label>
+              <select id="artCat">
+                <option value="">Auto-detect</option>
+                <option>Technology</option><option>Business</option><option>Politics</option>
+                <option>Entertainment</option><option>Sports</option><option>Science</option>
+                <option>Health</option><option>World</option><option>Lifestyle</option><option>Trending</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Writing Tone</label>
+              <select id="artTone">
+                <option value="journalistic">📰 Journalistic / Neutral</option>
+                <option value="engaging">💬 Engaging / Conversational</option>
+                <option value="analytical">🔍 Analytical / In-depth</option>
+                <option value="breaking">⚡ Breaking News / Urgent</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Target Word Count</label>
+              <select id="artWords">
+                <option value="600">600 words (Quick read)</option>
+                <option value="750" selected>750 words (Discover-optimized)</option>
+                <option value="900">900 words (In-depth)</option>
+                <option value="1200">1200 words (Long form)</option>
+              </select>
+            </div>
+
+            <button class="btn btn-primary btn-full" onclick="doGenerate()" id="genBtn">✨ Generate Article</button>
+            <p style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;">~₹1–3 per article · Claude AI</p>
+          </div>
+
+          <!-- RIGHT: OUTPUT -->
+          <div class="panel">
+            <div class="panel-title">📝 Generated Article</div>
+
+            <div id="outEmpty" class="empty-state">
+              <span class="ico">🤖</span>
+              <h3>Ready to generate</h3>
+              <p>Provide a URL or paste content, then click Generate Article</p>
+            </div>
+
+            <div id="outLoading" class="gen-loading hidden">
+              <span class="spin lg"></span>
+              <h3>Crafting your article…</h3>
+              <p id="loadMsg">Analyzing source content</p>
+            </div>
+
+            <div id="outContent" class="hidden">
+
+              <!-- Discover Score -->
+              <div class="discover-box">
+                <div class="score-ring" id="scoreRing">—</div>
+                <div>
+                  <div style="font-weight:800;font-size:14px;margin-bottom:4px;">Google Discover Score</div>
+                  <div style="font-size:12px;color:var(--text-mid);" id="scoreTip">—</div>
+                </div>
+              </div>
+
+              <!-- Headline -->
+              <div class="field">
+                <label>Headline <span style="font-weight:400;color:var(--text-dim);">(≤65 chars for Discover)</span></label>
+                <input id="outHl" type="text" maxlength="100" oninput="updateCounters();updatePreview()">
+                <div class="char-count" id="hlCount">0 / 65</div>
+              </div>
+
+              <!-- Subheadline -->
+              <div class="field">
+                <label>Subheadline / Excerpt</label>
+                <textarea id="outSub" rows="2" oninput="updatePreview()"></textarea>
+              </div>
+
+              <!-- SEO -->
+              <div class="seo-box">
+                <div class="seo-box-title">🔍 SEO & Meta</div>
+                <div class="field">
+                  <label>SEO Title <span style="font-weight:400;color:var(--text-dim);">(50–60 chars)</span></label>
+                  <input id="outSeoTit" type="text" maxlength="70" oninput="updateCounters()">
+                  <div class="char-count" id="seoCount">0 / 60</div>
+                </div>
+                <div class="field">
+                  <label>Meta Description <span style="font-weight:400;color:var(--text-dim);">(150–160 chars)</span></label>
+                  <textarea id="outMeta" rows="2" maxlength="165" oninput="updateCounters()"></textarea>
+                  <div class="char-count" id="metaCount">0 / 160</div>
+                </div>
+                <div class="field">
+                  <label>URL Slug</label>
+                  <input id="outSlug" class="mono">
+                </div>
+                <div>
+                  <label>Keywords</label>
+                  <div class="kw-list" id="kwList"></div>
+                </div>
+              </div>
+
+              <!-- Body -->
+              <div class="field">
+                <label>Article Body (HTML) &nbsp;·&nbsp; <span id="wcount">—</span> words</label>
+                <textarea id="outBody" rows="14" style="font-family:var(--font-mono);font-size:12px;line-height:1.6;" oninput="updatePreview()"></textarea>
+              </div>
+
+              <!-- WP options -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="mb-4">
+                <div class="field" style="margin:0">
+                  <label>WP Category</label>
+                  <select id="wpCat"><option value="">Uncategorized</option></select>
+                </div>
+                <div class="field" style="margin:0">
+                  <label>Publish Status</label>
+                  <select id="pubStatus">
+                    <option value="draft">Save as WP Draft</option>
+                    <option value="publish">Publish Now</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Preview -->
+              <details class="mb-4">
+                <summary>Preview Rendered Article</summary>
+                <div class="article-preview" id="artPreview"></div>
+              </details>
+
+              <!-- Actions -->
+              <div class="action-row">
+                <button class="btn btn-secondary" onclick="saveDraft()" id="saveDraftBtn">💾 Save Draft</button>
+                <button class="btn btn-success" onclick="pushToWP()" id="pushBtn">🚀 Push to WordPress</button>
+                <button class="btn btn-ghost" onclick="resetGen()">🔄 New</button>
+              </div>
+
+            </div><!-- /outContent -->
+          </div><!-- /output panel -->
+
+        </div>
+      </div><!-- /page-new -->
+
+      <!-- ===== ARTICLES ===== -->
+      <div id="page-articles" class="hidden">
+        <div class="sec-head">
+          <div class="sec-title">All Articles</div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('new')">+ New Article</button>
+        </div>
+        <div class="filter-row">
+          <input type="text" id="searchIn" placeholder="Search headlines…" oninput="filterArts()">
+          <select id="statusFil" onchange="filterArts()">
+            <option value="">All Status</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="wp_draft">WP Draft</option>
+          </select>
+          <select id="catFil" onchange="filterArts()">
+            <option value="">All Categories</option>
+            <option>Technology</option><option>Business</option><option>Politics</option>
+            <option>Entertainment</option><option>Sports</option><option>Science</option>
+            <option>Health</option><option>World</option><option>Lifestyle</option><option>Trending</option>
+          </select>
+        </div>
+        <div class="table-wrap" id="artTableWrap">
+          <div class="empty-state" style="background:var(--surface);">
+            <span class="ico">📰</span><h3>No articles yet</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div id="page-settings" class="hidden">
+        <div class="settings-grid">
+
+          <div class="card">
+            <div class="card-title">🤖 Claude AI Key</div>
+            <div class="form-group">
+              <label>Anthropic API Key</label>
+              <input id="setApiKey" type="password" placeholder="sk-ant-api03-…">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Save Key</button>
+            <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">Get your key at console.anthropic.com</p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📡 WordPress Connection</div>
+            <div class="form-group">
+              <label>WordPress Site URL</label>
+              <input id="setWpUrl" type="url" value="https://trendingverse.online">
+            </div>
+            <div class="form-group">
+              <label>WordPress Username</label>
+              <input id="setWpUser" placeholder="your-wp-username">
+            </div>
+            <div class="form-group">
+              <label>Application Password <span style="font-size:10px;color:var(--text-dim);">(not your login password)</span></label>
+              <input id="setWpPass" type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx">
+            </div>
+            <div class="flex gap-2">
+              <button class="btn btn-ghost btn-sm" onclick="testWP()">Test Connection</button>
+              <button class="btn btn-primary btn-sm" onclick="saveWpSettings()">Save</button>
+            </div>
+            <div id="wpTestOut" class="hidden" style="margin-top:12px;font-size:13px;padding:8px 12px;border-radius:8px;background:var(--surface2);"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">👤 Change Password</div>
+            <div class="form-group"><label>Current Password</label><input id="curPw" type="password" placeholder="••••••••"></div>
+            <div class="form-group"><label>New Password</label><input id="newPw" type="password" placeholder="••••••••"></div>
+            <div class="form-group"><label>Confirm New</label><input id="cfmPw" type="password" placeholder="••••••••"></div>
+            <button class="btn btn-primary btn-sm" onclick="changePw()">Update Password</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📖 How to get Application Password</div>
+            <ol style="font-size:13px;line-height:2.1;color:var(--text-mid);padding-left:18px;">
+              <li>Log in to <strong style="color:var(--text)">WordPress Admin</strong></li>
+              <li>Go to <strong style="color:var(--text)">Users → Your Profile</strong></li>
+              <li>Scroll to <strong style="color:var(--text)">"Application Passwords"</strong></li>
+              <li>Enter a name like <em>TrendVerse CMS</em></li>
+              <li>Click <strong style="color:var(--text)">Add New Application Password</strong></li>
+              <li>Copy the password <span style="color:var(--red)">(shown only once!)</span></li>
+            </ol>
+            <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text-dim);border-left:3px solid var(--accent);">
+              Requires WordPress 5.6+ · Works with Jetpack or native Application Passwords
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
+<script>
+// ── CONFIG — Replace with your Supabase project values ──
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
+
+// ── INIT ──
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── STATE ──
+let user = null, apiKey = '', wpCfg = {url:'https://trendingverse.online', user:'', pass:''};
+let allArts = [], wpCats = [], genData = null, inputMethod = 'url', fetchedText = '';
+
+// ════════════════════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════════════════════
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const btn = document.getElementById('loginBtnTxt');
+  const err = document.getElementById('loginErr');
+  err.classList.add('hidden');
+  if (!u || !p) { showErr(err, 'Enter username and password'); return; }
+  btn.innerHTML = '<span class="spin"></span> Signing in…';
+
+  try {
+    const { data, error } = await db.from('tv_users').select('*').eq('username', u).single();
+    if (error || !data) throw new Error('User not found');
+
+    let ok = false;
+    if (data.password === p) {                          // plain (first login)
+      ok = true;
+      const h = await bcrypt.hash(p, 10);
+      await db.from('tv_users').update({ password: h }).eq('id', data.id);
+    } else {
+      try { ok = await bcrypt.compare(p, data.password); } catch(_) { ok = false; }
+    }
+    if (!ok) throw new Error('Incorrect password');
+
+    user = data;
+    document.getElementById('uName').textContent   = data.name;
+    document.getElementById('uRole').textContent   = data.role;
+    document.getElementById('uAvatar').textContent = data.name.charAt(0).toUpperCase();
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+
+    await loadSettings();
+    await loadDashboard();
+    checkWpConn();
+  } catch(e) {
+    showErr(err, e.message);
+  } finally {
+    btn.textContent = 'Sign In →';
+  }
+}
+
+function doLogout() {
+  user = null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginPass').value = '';
+}
+
+function showErr(el, msg) { el.textContent = msg; el.classList.remove('hidden'); }
+document.addEventListener('keydown', e => { if(e.key==='Enter' && !document.getElementById('loginScreen').classList.contains('hidden')) doLogin(); });
+
+// ════════════════════════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════════════════════════
+async function loadSettings() {
+  try {
+    const { data: k } = await db.from('tv_api_keys').select('api_key').eq('user_id', user.id).single();
+    if (k) { apiKey = k.api_key; document.getElementById('setApiKey').value = apiKey; }
+
+    const { data: w } = await db.from('tv_settings').select('*').eq('user_id', user.id).single();
+    if (w) {
+      wpCfg = { url: w.wp_site_url||'https://trendingverse.online', user: w.wp_username||'', pass: w.wp_app_password||'' };
+      document.getElementById('setWpUrl').value  = wpCfg.url;
+      document.getElementById('setWpUser').value = wpCfg.user;
+      document.getElementById('setWpPass').value = wpCfg.pass;
+    }
+  } catch(_) {}
+}
+
+async function saveApiKey() {
+  const k = document.getElementById('setApiKey').value.trim();
+  if (!k) { toast('Enter an API key', 'error'); return; }
+  await db.from('tv_api_keys').upsert({ user_id: user.id, api_key: k, updated_at: new Date().toISOString() });
+  apiKey = k;
+  toast('API key saved!', 'success');
+}
+
+async function saveWpSettings() {
+  const url  = document.getElementById('setWpUrl').value.trim();
+  const uname = document.getElementById('setWpUser').value.trim();
+  const pass = document.getElementById('setWpPass').value.trim();
+  if (!url || !uname || !pass) { toast('Fill all WordPress fields', 'error'); return; }
+  await db.from('tv_settings').upsert({ user_id: user.id, wp_site_url: url, wp_username: uname, wp_app_password: pass, updated_at: new Date().toISOString() });
+  wpCfg = { url, user: uname, pass };
+  toast('WordPress settings saved!', 'success');
+  checkWpConn();
+}
+
+async function testWP() {
+  const url   = document.getElementById('setWpUrl').value.trim();
+  const uname = document.getElementById('setWpUser').value.trim();
+  const pass  = document.getElementById('setWpPass').value.trim();
+  const out   = document.getElementById('wpTestOut');
+  out.textContent = 'Testing…'; out.classList.remove('hidden');
+  try {
+    const r = await fetch(`${url}/wp-json/wp/v2/users/me`, { headers: { 'Authorization': 'Basic ' + btoa(uname+':'+pass) } });
+    if (r.ok) {
+      const d = await r.json();
+      out.innerHTML = `<span style="color:var(--green)">✅ Connected as <strong>${d.name}</strong> (${(d.roles||[]).join(', ')})</span>`;
+      toast('WordPress connected!', 'success');
+    } else {
+      const e = await r.json();
+      out.innerHTML = `<span style="color:var(--red)">❌ ${e.message||'Auth failed'}</span>`;
+    }
+  } catch(e) {
+    out.innerHTML = `<span style="color:var(--red)">❌ ${e.message} — Enable CORS on your WP site (install WP CORS plugin)</span>`;
+  }
+}
+
+async function checkWpConn() {
+  const dot = document.getElementById('wpDot');
+  const txt = document.getElementById('wpTxt');
+  if (!wpCfg.user || !wpCfg.pass) { txt.textContent = 'WP not configured'; return; }
+  try {
+    const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/users/me`, { headers: { 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) } });
+    if (r.ok) {
+      dot.className = 'dot on'; txt.textContent = 'WordPress Connected';
+      loadWpCats();
+    } else {
+      dot.className = 'dot off'; txt.textContent = 'WP Auth Failed';
+    }
+  } catch(_) {
+    dot.className = 'dot off'; txt.textContent = 'WP Unreachable';
+  }
+}
+
+async function loadWpCats() {
+  try {
+    const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/categories?per_page=50`, { headers: { 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) } });
+    if (!r.ok) return;
+    wpCats = await r.json();
+    const sel = document.getElementById('wpCat');
+    sel.innerHTML = '<option value="">Uncategorized</option>';
+    wpCats.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+  } catch(_) {}
+}
+
+async function changePw() {
+  const cur = document.getElementById('curPw').value;
+  const nw  = document.getElementById('newPw').value;
+  const cf  = document.getElementById('cfmPw').value;
+  if (!cur||!nw||!cf) { toast('Fill all fields','error'); return; }
+  if (nw !== cf) { toast('Passwords do not match','error'); return; }
+  if (nw.length < 6) { toast('Min 6 characters','error'); return; }
+  let ok = false;
+  try { ok = await bcrypt.compare(cur, user.password); } catch(_) { ok = cur === user.password; }
+  if (!ok) { toast('Current password incorrect','error'); return; }
+  const h = await bcrypt.hash(nw, 10);
+  await db.from('tv_users').update({ password: h }).eq('id', user.id);
+  user.password = h;
+  toast('Password updated!','success');
+  ['curPw','newPw','cfmPw'].forEach(id => document.getElementById(id).value='');
+}
+
+// ════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════
+function showPage(p) {
+  ['dashboard','new','articles','settings'].forEach(x => {
+    document.getElementById(`page-${x}`)?.classList.toggle('hidden', x !== p);
+    document.getElementById(`nav-${x}`)?.classList.toggle('active', x === p);
+  });
+  const titles = { dashboard:'Dashboard', new:'New Article', articles:'All Articles', settings:'Settings' };
+  document.getElementById('pageTitle').textContent = titles[p] || p;
+  if (p==='articles') loadArtsList();
+  if (p==='dashboard') loadDashboard();
+}
+
+// ════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════
+async function loadDashboard() {
+  const { data } = await db.from('tv_articles').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
+  allArts = data || [];
+  const now = new Date();
+  const mon = allArts.filter(a => { const d=new Date(a.created_at); return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); });
+  document.getElementById('sTot').textContent   = allArts.length;
+  document.getElementById('sPub').textContent   = allArts.filter(a=>a.wp_status==='published').length;
+  document.getElementById('sDraft').textContent = allArts.filter(a=>a.wp_status!=='published').length;
+  document.getElementById('sMon').textContent   = mon.length;
+  const el = document.getElementById('recentList');
+  if (!allArts.length) {
+    el.innerHTML = `<div class="empty-state"><span class="ico">✍️</span><h3>No articles yet</h3><p>Click "New Article" to generate your first piece</p></div>`;
+  } else {
+    el.innerHTML = buildTable(allArts.slice(0, 8));
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// ARTICLES LIST
+// ════════════════════════════════════════════════════════
+async function loadArtsList() {
+  const { data } = await db.from('tv_articles').select('*').eq('user_id', user.id).order('created_at', {ascending:false});
+  allArts = data || [];
+  renderTable(allArts);
+}
+
+function filterArts() {
+  const s = document.getElementById('searchIn').value.toLowerCase();
+  const st = document.getElementById('statusFil').value;
+  const ct = document.getElementById('catFil').value;
+  renderTable(allArts.filter(a => {
+    const ms = !s || (a.headline||'').toLowerCase().includes(s);
+    const mst = !st || a.wp_status === st;
+    const mc = !ct || a.category === ct;
+    return ms && mst && mc;
+  }));
+}
+
+function renderTable(arts) {
+  const el = document.getElementById('artTableWrap');
+  if (!arts.length) {
+    el.innerHTML = `<div class="empty-state" style="background:var(--surface)"><span class="ico">🔍</span><h3>No articles found</h3></div>`;
+    return;
+  }
+  el.innerHTML = buildTable(arts);
+}
+
+function buildTable(arts) {
+  const rows = arts.map(a => {
+    const dt = new Date(a.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    const stBadge = a.wp_status==='published' ? `<span class="badge b-pub">● Live</span>`
+                  : a.wp_status==='wp_draft'  ? `<span class="badge b-wp-draft">○ WP Draft</span>`
+                  : `<span class="badge b-draft">○ Draft</span>`;
+    const wpLink = a.wp_post_id ? `<a href="${wpCfg.url}/?p=${a.wp_post_id}" target="_blank" style="color:var(--blue);font-size:12px;font-weight:600;">View ↗</a>` : '—';
+    const score  = a.discover_score ? `<span style="font-weight:700;color:${a.discover_score>=80?'var(--green)':a.discover_score>=60?'var(--yellow)':'var(--red)'};">${a.discover_score}</span>` : '—';
+    return `<tr>
+      <td style="max-width:300px">
+        <div style="font-weight:700;font-size:13.5px;line-height:1.4;">${a.headline||'—'}</div>
+        <div class="mono" style="color:var(--text-dim);margin-top:3px;">${a.slug||''}</div>
+      </td>
+      <td>${a.category ? `<span class="badge b-cat">${a.category}</span>` : '—'}</td>
+      <td>${stBadge}</td>
+      <td style="font-size:12px;color:var(--text-mid)">${a.word_count||'—'}</td>
+      <td style="text-align:center">${score}</td>
+      <td style="font-size:12px;color:var(--text-mid)">${dt}</td>
+      <td>${wpLink}</td>
+    </tr>`;
+  }).join('');
+  return `<table>
+    <thead><tr><th>Headline / Slug</th><th>Category</th><th>Status</th><th>Words</th><th>Score</th><th>Date</th><th>WP</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ════════════════════════════════════════════════════════
+// INPUT METHOD
+// ════════════════════════════════════════════════════════
+function setMethod(m) {
+  inputMethod = m;
+  document.getElementById('tab-url').classList.toggle('active', m==='url');
+  document.getElementById('tab-paste').classList.toggle('active', m==='paste');
+  document.getElementById('urlArea').classList.toggle('hidden', m!=='url');
+  document.getElementById('pasteArea').classList.toggle('hidden', m!=='paste');
+}
+
+// ════════════════════════════════════════════════════════
+// URL FETCH
+// ════════════════════════════════════════════════════════
+async function doFetchUrl() {
+  const url = document.getElementById('srcUrl').value.trim();
+  if (!url) { toast('Enter a URL', 'error'); return; }
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+  fetchedText = '';
+
+  const proxies = [
+    () => fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`).then(r=>r.json()).then(d=>d.contents),
+    () => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`).then(r=>r.text()),
+    () => fetch(`https://thingproxy.freeboard.io/fetch/${url}`).then(r=>r.text())
+  ];
+
+  let html = '';
+  for (const tryProxy of proxies) {
+    try { html = await tryProxy(); if (html && html.length > 200) break; } catch(_) { continue; }
+  }
+
+  if (!html) {
+    toast('Could not fetch URL. Try pasting content directly.', 'error');
+    btn.disabled = false; btn.textContent = 'Fetch';
+    return;
+  }
+
+  fetchedText = extractText(html);
+  const prev = document.getElementById('fetchPreview');
+  prev.textContent = fetchedText.substring(0, 500) + (fetchedText.length > 500 ? '…' : '');
+  prev.classList.remove('hidden');
+  const wc = fetchedText.trim().split(/\s+/).length;
+  toast(`✅ Fetched! ~${wc} words extracted`, 'success');
+  btn.disabled = false; btn.textContent = 'Re-fetch';
+}
+
+function extractText(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  ['script','style','nav','footer','header','aside','iframe','noscript','form','.ad','[class*="sidebar"]','[class*="related"]','[class*="comment"]','[class*="social"]'].forEach(s => {
+    try { doc.querySelectorAll(s).forEach(e => e.remove()); } catch(_) {}
+  });
+  const main = doc.querySelector('article,[class*="article"],[class*="story"],[class*="post-content"],[class*="entry-content"],main') || doc.body;
+  return (main.innerText || main.textContent || '').split('\n').map(l=>l.trim()).filter(l=>l.length>25).join('\n').substring(0, 9000);
+}
+
+// ════════════════════════════════════════════════════════
+// ARTICLE GENERATION
+// ════════════════════════════════════════════════════════
+async function doGenerate() {
+  if (!apiKey) { toast('Set your Claude API key in Settings first', 'error'); showPage('settings'); return; }
+
+  let src = '';
+  if (inputMethod === 'url') {
+    if (!fetchedText) {
+      if (!document.getElementById('srcUrl').value.trim()) { toast('Enter a URL and click Fetch', 'error'); return; }
+      await doFetchUrl();
+      if (!fetchedText) return;
+    }
+    src = fetchedText;
+  } else {
+    src = document.getElementById('pasteText').value.trim();
+    if (!src) { toast('Paste some content first', 'error'); return; }
+  }
+
+  const cat   = document.getElementById('artCat').value;
+  const tone  = document.getElementById('artTone').value;
+  const words = document.getElementById('artWords').value;
+
+  // Show loading
+  document.getElementById('outEmpty').classList.add('hidden');
+  document.getElementById('outContent').classList.add('hidden');
+  document.getElementById('outLoading').classList.remove('hidden');
+
+  const msgs = ['Analyzing source content…','Crafting original narrative…','Optimizing SEO elements…','Scoring Google Discover readiness…'];
+  let mi = 0;
+  const msgEl = document.getElementById('loadMsg');
+  const iv = setInterval(() => { msgEl.textContent = msgs[++mi % msgs.length]; }, 2500);
+
+  try {
+    const prompt = buildPrompt(src, cat, tone, words);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',   // Switch to claude-sonnet-4-5 to reduce cost
+        max_tokens: 5000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || 'API error'); }
+
+    const raw = (await resp.json()).content[0].text;
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Could not parse AI response — try again');
+
+    genData = JSON.parse(match[0]);
+    genData.source_url = document.getElementById('srcUrl').value.trim();
+    renderOutput(genData);
+
+  } catch(e) {
+    document.getElementById('outLoading').classList.add('hidden');
+    document.getElementById('outEmpty').classList.remove('hidden');
+    toast('Generation failed: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    clearInterval(iv);
+  }
+}
+
+function buildPrompt(src, cat, tone, words) {
+  const tones = {
+    journalistic: 'Professional, neutral, objective. Use inverted pyramid structure. Quote hypothetical experts.',
+    engaging:     'Engaging, conversational. Use storytelling. Start with an anecdote or surprising fact.',
+    analytical:   'Analytical, in-depth. Provide context, implications, trends. Reference industry impact.',
+    breaking:     'Urgent, fast-paced breaking news. Most critical fact first. Short punchy sentences.'
+  };
+  return `You are a senior English journalist writing for trendingverse.online — a trending and viral news site.
+
+TASK: Rewrite the source content below into a COMPLETELY ORIGINAL, plagiarism-free, high-quality English article.
+
+STYLE: ${tones[tone]||tones.journalistic}
+TARGET LENGTH: ${words} words
+${cat ? `CATEGORY: ${cat}` : 'AUTO-DETECT CATEGORY'}
+
+REQUIREMENTS:
+1. Headline: Max 65 characters. Curiosity-driven but NOT clickbait. Factual, compelling.
+2. Subheadline: 1-2 sentences, 100-150 chars. Expand on the headline with key detail.
+3. Article body: Exactly ${words} words. Structure with clear <h2> subheadings every 150-200 words.
+4. First paragraph: Most important fact, written to hook instantly. No fluff.
+5. Naturally weave the primary keyword in within the first 100 words, then 3-5x throughout.
+6. DO NOT reproduce any original phrasing verbatim. Fully rewrite.
+7. Include specific numbers, facts, dates from the source accurately.
+8. End with a strong closing paragraph (outlook, implication, or call-to-thought).
+9. SEO title: 50-60 chars, keyword-rich.
+10. Meta description: 150-160 chars, compelling, includes keyword, drives clicks.
+11. Slug: lowercase, hyphenated, max 60 chars, keyword-first.
+12. Keywords: 5 most relevant SEO keywords for this topic.
+13. Google Discover score (0-100): High image potential+trending topic+engaging headline = high score.
+
+RESPOND WITH ONLY A VALID JSON OBJECT (no markdown fences, no preamble):
+{
+  "headline": "string",
+  "subheadline": "string",
+  "article_html": "string with <p>, <h2>, <strong>, <em> tags",
+  "seo_title": "string",
+  "meta_description": "string",
+  "slug": "string",
+  "keywords": ["k1","k2","k3","k4","k5"],
+  "discover_score": 85,
+  "discover_tip": "one specific tip to improve Discover performance",
+  "word_count": ${words},
+  "category": "string",
+  "schema_type": "NewsArticle"
+}
+
+SOURCE CONTENT:
+---
+${src.substring(0, 7000)}
+---`;
+}
+
+function renderOutput(d) {
+  document.getElementById('outLoading').classList.add('hidden');
+  document.getElementById('outContent').classList.remove('hidden');
+
+  document.getElementById('outHl').value     = d.headline || '';
+  document.getElementById('outSub').value    = d.subheadline || '';
+  document.getElementById('outSeoTit').value = d.seo_title || '';
+  document.getElementById('outMeta').value   = d.meta_description || '';
+  document.getElementById('outSlug').value   = d.slug || '';
+  document.getElementById('outBody').value   = d.article_html || '';
+  document.getElementById('wcount').textContent = d.word_count || '—';
+
+  // Keywords
+  document.getElementById('kwList').innerHTML = (d.keywords||[]).map(k=>`<span class="kw-tag">${k}</span>`).join('');
+
+  // Discover score
+  const sc = d.discover_score || 0;
+  const ring = document.getElementById('scoreRing');
+  ring.textContent = sc;
+  ring.className = 'score-ring' + (sc < 60 ? ' low' : sc < 80 ? ' med' : '');
+  document.getElementById('scoreTip').textContent = d.discover_tip || '';
+
+  // Auto-select WP category
+  if (d.category && wpCats.length) {
+    const match = wpCats.find(c => c.name.toLowerCase() === d.category.toLowerCase());
+    if (match) document.getElementById('wpCat').value = match.id;
+  }
+
+  updateCounters();
+  updatePreview();
+  toast('Article generated!', 'success');
+}
+
+function updateCounters() {
+  function set(id, val, max) {
+    const el = document.getElementById(id);
+    el.textContent = `${val} / ${max}`;
+    el.className = 'char-count' + (val > max+5 ? ' over' : val > max ? ' warn' : '');
+  }
+  set('hlCount',   document.getElementById('outHl').value.length, 65);
+  set('seoCount',  document.getElementById('outSeoTit').value.length, 60);
+  set('metaCount', document.getElementById('outMeta').value.length, 160);
+}
+
+function updatePreview() {
+  document.getElementById('artPreview').innerHTML = `
+    <div class="preview-hl">${document.getElementById('outHl').value}</div>
+    <div class="preview-sub">${document.getElementById('outSub').value}</div>
+    <div class="preview-body">${document.getElementById('outBody').value}</div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// SAVE & PUBLISH
+// ════════════════════════════════════════════════════════
+function collectFields() {
+  return {
+    user_id:      user.id,
+    user_name:    user.name,
+    username:     user.username,
+    headline:     document.getElementById('outHl').value,
+    subheadline:  document.getElementById('outSub').value,
+    article_html: document.getElementById('outBody').value,
+    seo_title:    document.getElementById('outSeoTit').value,
+    meta_description: document.getElementById('outMeta').value,
+    slug:         document.getElementById('outSlug').value,
+    keywords:     genData?.keywords || [],
+    schema_type:  genData?.schema_type || 'NewsArticle',
+    discover_score: genData?.discover_score || null,
+    discover_tip:   genData?.discover_tip || null,
+    word_count:   genData?.word_count || null,
+    category:     genData?.category || document.getElementById('artCat').value,
+    source_url:   document.getElementById('srcUrl').value || null,
+    created_at:   new Date().toISOString()
+  };
+}
+
+async function saveDraft() {
+  const btn = document.getElementById('saveDraftBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Saving…';
+  try {
+    const { error } = await db.from('tv_articles').insert([{ ...collectFields(), wp_status: 'draft' }]);
+    if (error) throw error;
+    toast('Draft saved to CMS!', 'success');
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '💾 Save Draft';
+  }
+}
+
+async function pushToWP() {
+  if (!wpCfg.user || !wpCfg.pass) { toast('Configure WordPress settings first', 'error'); showPage('settings'); return; }
+  const btn = document.getElementById('pushBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Pushing…';
+
+  const wpStatus = document.getElementById('pubStatus').value;
+  const wpCatId  = document.getElementById('wpCat').value;
+  const fields   = collectFields();
+
+  try {
+    const payload = {
+      title:   fields.headline,
+      content: fields.article_html,
+      excerpt: fields.meta_description,
+      slug:    fields.slug,
+      status:  wpStatus,
+    };
+    if (wpCatId) payload.categories = [parseInt(wpCatId)];
+
+    // Auto-create/find tags
+    if (fields.keywords?.length) {
+      const tagIds = await getOrCreateTags(fields.keywords);
+      if (tagIds.length) payload.tags = tagIds;
+    }
+
+    const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/posts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) },
+      body: JSON.stringify(payload)
+    });
+
+    if (!r.ok) { const e = await r.json(); throw new Error(e.message || 'WP error'); }
+    const wpPost = await r.json();
+
+    // Save to DB
+    const dbStatus = wpStatus === 'publish' ? 'published' : 'wp_draft';
+    await db.from('tv_articles').insert([{ ...fields, wp_post_id: wpPost.id, wp_status: dbStatus }]);
+
+    toast(wpStatus === 'publish' ? `🎉 Published! Post #${wpPost.id}` : `📝 Saved as WP Draft #${wpPost.id}`, 'success');
+
+    if (wpPost.link && wpStatus === 'publish') {
+      setTimeout(() => toast(`<a href="${wpPost.link}" target="_blank" style="color:var(--blue)">View article →</a>`, 'info'), 1200);
+    }
+  } catch(e) {
+    toast('Publish failed: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '🚀 Push to WordPress';
+  }
+}
+
+async function getOrCreateTags(keywords) {
+  const ids = [];
+  for (const kw of keywords.slice(0, 5)) {
+    try {
+      const r = await fetch(`${wpCfg.url}/wp-json/wp/v2/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) },
+        body: JSON.stringify({ name: kw })
+      });
+      if (r.ok) { ids.push((await r.json()).id); }
+      else if (r.status === 400) {
+        // Already exists — search
+        const s = await fetch(`${wpCfg.url}/wp-json/wp/v2/tags?search=${encodeURIComponent(kw)}`, {
+          headers: { 'Authorization': 'Basic ' + btoa(wpCfg.user+':'+wpCfg.pass) }
+        });
+        if (s.ok) { const t = await s.json(); if (t.length) ids.push(t[0].id); }
+      }
+    } catch(_) {}
+  }
+  return ids;
+}
+
+function resetGen() {
+  genData = null; fetchedText = '';
+  document.getElementById('srcUrl').value = '';
+  document.getElementById('pasteText').value = '';
+  document.getElementById('fetchPreview').classList.add('hidden');
+  document.getElementById('outContent').classList.add('hidden');
+  document.getElementById('outEmpty').classList.remove('hidden');
+  toast('Ready for new article', 'info');
+}
+
+// ════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'•'}</span><span>${msg}</span>`;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(), 300); }, 4500);
+}
+</script>
+</body>
+</html>
