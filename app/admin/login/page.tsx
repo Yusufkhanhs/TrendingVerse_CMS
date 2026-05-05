@@ -1,0 +1,4 @@
+"use client";
+import { useState } from "react";
+import { getSupabaseBrowser } from "@/lib/supabase";
+export default function LoginPage() { const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const login = async () => { const s=getSupabaseBrowser(); await s.auth.signInWithPassword({email,password}); window.location.href='/admin'; }; return <main className="min-h-screen grid place-items-center"><div className="card w-full max-w-md"><h1 className="text-xl font-bold mb-4">Admin Login</h1><input className="input mb-2" placeholder="Email" onChange={e=>setEmail(e.target.value)} /><input className="input mb-2" type="password" placeholder="Password" onChange={e=>setPassword(e.target.value)} /><button className="btn-primary w-full" onClick={login}>Login</button></div></main>; }
