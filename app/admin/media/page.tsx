@@ -1,0 +1,3 @@
+"use client";
+import { useState } from "react";
+export default function MediaPage(){const [file,setFile]=useState<File|null>(null);const [url,setUrl]=useState('');const upload=async()=>{if(!file) return;const fd=new FormData();fd.append('file',file);const r=await fetch('/api/upload',{method:'POST',body:fd});const d=await r.json();setUrl(d.url)};return <main className='p-6 max-w-4xl mx-auto'><h1 className='text-2xl font-bold mb-4'>Media Manager</h1><div className='card'><input type='file' onChange={e=>setFile(e.target.files?.[0]??null)} /><button className='btn-primary ml-2' onClick={upload}>Upload</button>{url && <p className='mt-2'>{url}</p>}</div></main>}

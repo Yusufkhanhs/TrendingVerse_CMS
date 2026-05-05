@@ -1,0 +1,3 @@
+"use client";
+import { useState } from "react";
+export default function SEOPage(){const [content,setContent]=useState('');const [result,setResult]=useState<any>(null);const run=async()=>{const r=await fetch('/api/ai/seo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});setResult(await r.json())};return <main className='p-6 max-w-4xl mx-auto'><h1 className='text-2xl font-bold mb-4'>SEO Optimizer</h1><div className='card'><textarea className='input min-h-28 mb-2' value={content} onChange={e=>setContent(e.target.value)} /><button className='btn-primary' onClick={run}>Analyze</button>{result && <pre className='mt-4 whitespace-pre-wrap'>{JSON.stringify(result,null,2)}</pre>}</div></main>}

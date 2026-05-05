@@ -1,0 +1,1 @@
+export type Article = { id: string; title: string; slug: string; excerpt: string | null; content: string; status: "draft" | "published" | "scheduled"; featured_image_url: string | null; category_id: string | null; is_sponsored: boolean; published_at: string | null; scheduled_for: string | null; created_at: string; };

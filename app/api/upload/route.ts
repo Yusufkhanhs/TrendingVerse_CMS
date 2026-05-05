@@ -1,0 +1,3 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseServer } from "@/lib/supabase";
+export async function POST(req:NextRequest){const form=await req.formData();const file=form.get('file') as File;const bytes=Buffer.from(await file.arrayBuffer());const path=`uploads/${Date.now()}-${file.name}`;const db=getSupabaseServer();const {error}=await db.storage.from('media').upload(path,bytes,{contentType:file.type});if(error) return NextResponse.json({error:error.message},{status:400});const {data}=db.storage.from('media').getPublicUrl(path);await db.from('media_assets').insert({file_name:file.name,file_path:path,public_url:data.publicUrl,mime_type:file.type,size_bytes:file.size});return NextResponse.json({url:data.publicUrl});}

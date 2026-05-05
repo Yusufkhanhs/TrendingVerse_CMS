@@ -1,0 +1,3 @@
+"use client";
+import { useState } from "react";
+export default function AIPage(){const [prompt,setPrompt]=useState('');const [output,setOutput]=useState('');const run=async()=>{const r=await fetch('/api/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});setOutput((await r.json()).text)};return <main className='p-6 max-w-4xl mx-auto'><h1 className='text-2xl font-bold mb-4'>AI Writer</h1><div className='card'><textarea className='input min-h-28 mb-2' value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder='Title / keywords' /><button className='btn-primary' onClick={run}>Generate</button><pre className='mt-4 whitespace-pre-wrap'>{output}</pre></div></main>}
